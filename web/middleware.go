@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
-	"github.com/jarias/stormpath-sdk-go"
+	"github.com/sappenin/stormpath-sdk-go"
 )
 
 //ApplicationMiddleware is an http.Handler that stores a given account in the request context

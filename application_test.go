@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 
 	"github.com/dgrijalva/jwt-go"
-	. "github.com/jarias/stormpath-sdk-go"
+	. "github.com/sappenin/stormpath-sdk-go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

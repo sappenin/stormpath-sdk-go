@@ -3,7 +3,7 @@ package stormpath_test
 import (
 	"net/url"
 
-	. "github.com/jarias/stormpath-sdk-go"
+	. "github.com/sappenin/stormpath-sdk-go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/gorilla/sessions"
-	"github.com/jarias/stormpath-sdk-go"
+	"github.com/sappenin/stormpath-sdk-go"
 )
 
 //IDSiteLoginHandler is an http.Handler for Strompath's IDSite login

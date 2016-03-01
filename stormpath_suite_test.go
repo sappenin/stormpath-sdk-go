@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	. "github.com/jarias/stormpath-sdk-go"
+	. "github.com/sappenin/stormpath-sdk-go"
 	uuid "github.com/nu7hatch/gouuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

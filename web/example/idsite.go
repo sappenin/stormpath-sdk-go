@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jarias/stormpath-sdk-go/web"
+	"github.com/sappenin/stormpath-sdk-go/web"
 
 	"github.com/codegangsta/negroni"
-	"github.com/jarias/stormpath-sdk-go"
+	"github.com/sappenin/stormpath-sdk-go"
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/gorilla/sessions"

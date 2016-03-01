@@ -2,7 +2,7 @@ package stormpathweb
 
 import (
 	"github.com/gorilla/context"
-	"github.com/jarias/stormpath-sdk-go"
+	"github.com/sappenin/stormpath-sdk-go"
 
 	"net/http"
 )

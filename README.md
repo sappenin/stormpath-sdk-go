@@ -1,6 +1,6 @@
 Go App Engine SDK for the [Stormpath](http://stormpath.com/) API
 
-This is a fork of the excellent [stormpath-sdk-go library](https://github.com/jarias/stormpath-sdk-go) that removes various dependencies that don't play nicely 
+This is a fork of the excellent [stormpath-sdk-go library](https://github.com/sappenin/stormpath-sdk-go) that removes various dependencies that don't play nicely 
 with Google App Engine.
 
 Develop:

@@ -1,7 +1,7 @@
 package stormpath_test
 
 import (
-	. "github.com/jarias/stormpath-sdk-go"
+	. "github.com/sappenin/stormpath-sdk-go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	lediscfg "github.com/siddontang/ledisdb/config"
