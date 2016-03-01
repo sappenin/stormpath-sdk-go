@@ -5,11 +5,11 @@ with Google App Engine.
 
 Develop:
 
-[![Build Status](https://travis-ci.org/sappenin/stormpath-sdk-go.svg?branch=develop)](https://travis-ci.org/jarias/stormpath-sdk-go) [![codecov.io](http://codecov.io/github/jarias/stormpath-sdk-go/coverage.svg?branch=develop)](http://codecov.io/github/jarias/stormpath-sdk-go?branch=develop)
+[![Build Status](https://travis-ci.org/sappenin/stormpath-sdk-go.svg?branch=develop)](https://travis-ci.org/sappenin/stormpath-sdk-go) [![codecov.io](http://codecov.io/github/sappenin/stormpath-sdk-go/coverage.svg?branch=develop)](http://codecov.io/github/sappenin/stormpath-sdk-go?branch=develop)
 
 Master:
 
-[![Build Status](https://travis-ci.org/sappenin/stormpath-sdk-go.svg?branch=master)](https://travis-ci.org/jarias/stormpath-sdk-go) [![codecov.io](http://codecov.io/github/jarias/stormpath-sdk-go/coverage.svg?branch=master)](http://codecov.io/github/jarias/stormpath-sdk-go?branch=master)
+[![Build Status](https://travis-ci.org/sappenin/stormpath-sdk-go.svg?branch=master)](https://travis-ci.org/sappenin/stormpath-sdk-go) [![codecov.io](http://codecov.io/github/sappenin/stormpath-sdk-go/coverage.svg?branch=master)](http://codecov.io/github/sappenin/stormpath-sdk-go?branch=master)
 
 # Usage
 

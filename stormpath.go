@@ -118,7 +118,7 @@ func (client *Client) newRequest(method string, urlStr string, body interface{},
 		encodedBody = body.([]byte)
 	}
 	req, _ := http.NewRequest(method, urlStr, bytes.NewReader(encodedBody))
-	req.Header.Set("User-Agent", fmt.Sprintf("jarias/stormpath-sdk-go/%s (%s; %s)", version, runtime.GOOS, runtime.GOARCH))
+	req.Header.Set("User-Agent", fmt.Sprintf("sappenin/stormpath-sdk-go/%s (%s; %s)", version, runtime.GOOS, runtime.GOARCH))
 	req.Header.Set("Accept", ApplicationJson)
 	req.Header.Set("Content-Type", contentType)
 
