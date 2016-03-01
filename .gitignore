@@ -3,3 +3,4 @@
 stormpath-sdk-go.test
 gin-bin
 var/
+.idea

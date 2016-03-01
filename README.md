@@ -1,19 +1,22 @@
-Go SDK for the [Stormpath](http://stormpath.com/) API
+Go App Engine SDK for the [Stormpath](http://stormpath.com/) API
+
+This is a fork of the excellent [stormpath-sdk-go library](https://github.com/jarias/stormpath-sdk-go) that removes various dependencies that don't play nicely 
+with Google App Engine.
 
 Develop:
 
-[![Build Status](https://travis-ci.org/jarias/stormpath-sdk-go.svg?branch=develop)](https://travis-ci.org/jarias/stormpath-sdk-go) [![codecov.io](http://codecov.io/github/jarias/stormpath-sdk-go/coverage.svg?branch=develop)](http://codecov.io/github/jarias/stormpath-sdk-go?branch=develop)
+[![Build Status](https://travis-ci.org/sappenin/stormpath-sdk-go.svg?branch=develop)](https://travis-ci.org/jarias/stormpath-sdk-go) [![codecov.io](http://codecov.io/github/jarias/stormpath-sdk-go/coverage.svg?branch=develop)](http://codecov.io/github/jarias/stormpath-sdk-go?branch=develop)
 
 Master:
 
-[![Build Status](https://travis-ci.org/jarias/stormpath-sdk-go.svg?branch=master)](https://travis-ci.org/jarias/stormpath-sdk-go) [![codecov.io](http://codecov.io/github/jarias/stormpath-sdk-go/coverage.svg?branch=master)](http://codecov.io/github/jarias/stormpath-sdk-go?branch=master)
+[![Build Status](https://travis-ci.org/sappenin/stormpath-sdk-go.svg?branch=master)](https://travis-ci.org/jarias/stormpath-sdk-go) [![codecov.io](http://codecov.io/github/jarias/stormpath-sdk-go/coverage.svg?branch=master)](http://codecov.io/github/jarias/stormpath-sdk-go?branch=master)
 
 # Usage
 
-```go get github.com/jarias/stormpath-sdk-go```
+```go get github.com/sappenin/stormpath-sdk-go```
 
 ```go
-import "github.com/jarias/stormpath-sdk-go"
+import "github.com/sappenin/stormpath-sdk-go"
 import "fmt"
 
 //This would look for env variables first STORMPATH_API_KEY_ID and STORMPATH_API_KEY_SECRET if empty
