@@ -1,9 +1,6 @@
+.idea
 .envrc
 *.coverprofile
 stormpath-sdk-go.test
 gin-bin
 var/
-.idea
-pkg
-src
-bin
