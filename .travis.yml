@@ -3,6 +3,10 @@ go:
 - 1.4.2
 - 1.5.1
 install:
+- go get github.com/gorilla/context
+- go get github.com/gorilla/sessions
+- go get github.com/codegangsta/negroni
+- go get github.com/julienschmidt/httprouter
 - go get github.com/mattn/goveralls
 - go get github.com/onsi/ginkgo/ginkgo
 - go get github.com/onsi/gomega
