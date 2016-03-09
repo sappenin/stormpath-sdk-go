@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gorilla/context"
+	gorillia_context "github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"github.com/sappenin/stormpath-sdk-go"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/log"
 )
 
 //ApplicationMiddleware is an http.Handler that stores a given account in the request context
@@ -18,12 +20,19 @@ type ApplicationMiddleware struct {
 //ServeHTTP implements the http.Handler interface for the ApplicationMiddleware type
 func (m ApplicationMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//Check if it the current app already exists
+	ctx := appengine.NewContext(r)
 	app := GetApplication(r)
 	if app == nil {
-		app, err := stormpath.GetApplication(m.ApplicationHref, stormpath.MakeApplicationCriteria())
+		app, err := stormpath.GetApplication(ctx, m.ApplicationHref, stormpath.MakeApplicationCriteria())
 		if err == nil {
-			context.Set(r, ApplicationKey, *app)
+			gorillia_context.Set(r, ApplicationKey, *app)
+			log.Debugf(ctx, "ApplicationMiddleware.ServeHTTP(): Successfully set Application into Context with Key '%v'", ApplicationKey)
+		} else {
+			log.Debugf(ctx, "ApplicationMiddleware.ServeHTTP(): Unable to fetch Application from StormPath: %v", err)
+			panic(err)
 		}
+	} else {
+		log.Debugf(ctx, "ApplicationMiddleware.ServeHTTP(): Application was: %#v", app)
 	}
 }
 
@@ -36,13 +45,17 @@ type AccountMiddleware struct {
 
 //ServeHTTP implements the http.Handler interface for the AccountMiddleware type
 func (m AccountMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
+	log.Debugf(ctx, "AccountMiddleware.ServeHTTP(): Operating on Session with Name: '%v'", m.SessionName)
 	session, _ := m.SessionStore.Get(r, m.SessionName)
-
 	if session.Values[AccountKey] != nil {
 		account := stormpath.Account{}
 
 		json.Unmarshal([]byte(session.Values[AccountKey].([]uint8)), &account)
-		context.Set(r, AccountKey, account)
+		gorillia_context.Set(r, AccountKey, account)
+		log.Debugf(ctx, "AccountMiddleware.ServeHTTP(): Successfully set Account into Context with Key '%v'", AccountKey)
+	} else {
+		log.Debugf(ctx, "AccountMiddleware.ServeHTTP(): No Account existed in session for Key '%v'", AccountKey)
 	}
 }
 

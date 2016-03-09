@@ -12,6 +12,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/gorilla/sessions"
+	"google.golang.org/appengine/aetest"
 )
 
 var indexHTML = `
@@ -50,7 +51,12 @@ const sessionName = "go-sdk-demo"
 
 var store = sessions.NewCookieStore([]byte("go-sdk-demo"))
 
+var ctx, done, ctx_err = aetest.NewContext()
+
+// TODO: Wrap the Negroni to supply a context.
+
 func main() {
+
 	credentials, _ := stormpath.NewDefaultCredentials()
 	stormpath.Init(credentials, nil)
 
@@ -67,9 +73,9 @@ func main() {
 		fmt.Fprint(w, indexHTML)
 	})
 
-	router.Handler("GET", "/login", loginHandler())
-	router.Handler("GET", "/logout", logoutHandler())
-	router.Handler("GET", "/callback", callbackHandler())
+	router.Handler("GET", "/login", stormpathweb.ContextHandler{Real: loginHandler()})
+	router.Handler("GET", "/logout", stormpathweb.ContextHandler{Real: logoutHandler()})
+	router.Handler("GET", "/callback", stormpathweb.ContextHandler{Real: callbackHandler()})
 
 	authRouter := httprouter.New()
 
@@ -88,6 +94,8 @@ func main() {
 	n.UseHandler(router)
 
 	n.Run(":9999")
+
+	defer done()
 }
 
 func authenticationMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
@@ -117,26 +125,26 @@ func applicationMiddleware() stormpathweb.ApplicationMiddleware {
 	}
 }
 
-func loginHandler() stormpathweb.IDSiteLoginHandler {
+func loginHandler() stormpathweb.ContextHandlerFunc {
 	return stormpathweb.IDSiteLoginHandler{
 		Options: map[string]string{"callbackURI": "/callback"},
-	}
+	}.ServeHTTP
 }
 
-func logoutHandler() stormpathweb.IDSiteLogoutHandler {
+func logoutHandler() stormpathweb.ContextHandlerFunc {
 	return stormpathweb.IDSiteLogoutHandler{
 		Options: map[string]string{"callbackURI": "/callback"},
-	}
+	}.ServeHTTP
 }
 
-func callbackHandler() stormpathweb.IDSiteAuthCallbackHandler {
+func callbackHandler() stormpathweb.ContextHandlerFunc {
 	return stormpathweb.IDSiteAuthCallbackHandler{
 		SessionStore:      store,
 		SessionName:       sessionName,
 		LoginRedirectURI:  "/app",
 		LogoutRedirectURI: "/",
 		ErrorHandler:      http.HandlerFunc(idSiteErrorHandler),
-	}
+	}.ServeHTTP
 }
 
 func idSiteErrorHandler(w http.ResponseWriter, r *http.Request) {

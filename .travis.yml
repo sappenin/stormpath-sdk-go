@@ -3,6 +3,7 @@ go:
 - 1.4.2
 - 1.5.1
 install:
+- go get github.com/stretchr/testify/assert
 - go get github.com/gorilla/context
 - go get github.com/gorilla/sessions
 - go get github.com/codegangsta/negroni

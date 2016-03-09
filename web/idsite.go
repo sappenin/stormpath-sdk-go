@@ -2,13 +2,40 @@ package stormpathweb
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"net/url"
-
 	"github.com/gorilla/sessions"
 	"github.com/sappenin/stormpath-sdk-go"
+	"google.golang.org/appengine/log"
+	"golang.org/x/net/context"
+	"fmt"
+	"net/url"
+	"google.golang.org/appengine"
+	"github.com/nu7hatch/gouuid"
+	gorilla_context "github.com/gorilla/context"
 )
+
+
+//Our appengine.Context http handler.  Essentially, this is a http.Handler that adds an appending context.
+type ContextHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request)
+
+// A container that holds the Handler for GAE.
+type ContextHandler struct {
+	Real ContextHandlerFunc
+}
+
+const REQUEST_ID = "request-id"
+
+// Makes ContextHandler conform to http.Handler
+func (f ContextHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// For each appengine request, we create a UUID to uniquely identify the request.
+	if rid, err := uuid.NewV4(); err != nil {
+		panic(err)
+	} else {
+		gorilla_context.Set(r, REQUEST_ID, rid)
+		ctx := appengine.NewContext(r)
+		f.Real(ctx, w, r)
+	}
+}
 
 //IDSiteLoginHandler is an http.Handler for Strompath's IDSite login
 type IDSiteLoginHandler struct {
@@ -20,25 +47,24 @@ type IDSiteLogoutHandler struct {
 	Options map[string]string
 }
 
-//ServeHTTP implements the http.Handler interface for IDSiteLoginHandler type
-func (h IDSiteLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	idSiteURLHandler(w, r, ensureOption("logout", "", h.Options))
+//ServeHTTP implements the http.Handler interface for IDSiteLoginHandler type and ContextHandlerFunc to support App Engine Contexts
+func (h IDSiteLoginHandler) ServeHTTP(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	idSiteURLHandler(ctx, w, r, ensureOption("logout", "", h.Options))
 }
 
-//ServeHTTP implements the http.Handler interface for IDSiteLogoutHandler type
-func (h IDSiteLogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	idSiteURLHandler(w, r, ensureOption("logout", "true", h.Options))
+// Implement ContextHandlerFunc for IDSiteLogoutHandler
+func (h IDSiteLogoutHandler) ServeHTTP(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	idSiteURLHandler(ctx, w, r, ensureOption("logout", "true", h.Options))
 }
 
-func idSiteURLHandler(w http.ResponseWriter, r *http.Request, options map[string]string) {
+func idSiteURLHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, options map[string]string) {
 	if options["callbackURI"][0] == '/' {
 		u, _ := url.Parse(r.Header.Get("Referer"))
 		callbackURL := fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, options["callbackURI"])
 		options["callbackURI"] = callbackURL
 	}
 
-	idSiteURL, _ := GetApplication(r).CreateIDSiteURL(options)
-
+	idSiteURL, _ := GetApplication(r).CreateIDSiteURL(ctx, options)
 	http.Redirect(w, r, idSiteURL, http.StatusFound)
 }
 
@@ -59,23 +85,34 @@ type IDSiteAuthCallbackHandler struct {
 	ErrorHandler      http.Handler
 }
 
-//ServeHTTP implements the http.Handler interface for the IDSiteAuthCallbackHandler type
-func (h IDSiteAuthCallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+//ServeHTTP implements the http.Handler interface for the IDSiteAuthCallbackHandler type and ContextHandlerFunc to support App Engine Contexts
+// Implement  for IDSiteAuthCallbackHandler
+func (h IDSiteAuthCallbackHandler) ServeHTTP(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	app := GetApplication(r)
-	result, err := app.HandleIDSiteCallback(r.URL.String())
+	if app == nil {
+		log.Debugf(ctx, "No StormPath Application found in Context.  Clearing Account Session!")
+		h.clearAccountInSession(w, r)
+		http.Redirect(w, r, "/", http.StatusFound)
+	}
 
+	log.Debugf(ctx, "StormPath Application was found in Context: %#v", app)
+	result, err := app.HandleIDSiteCallback(ctx, r.URL.String())
+
+	// TODO: Make these nicer.  If there's a JWT error of some sort, we should redirect the User to the Oops page.
 	if err != nil {
-		stormpath.Logger.Printf("[ERROR] IDSite %s", err)
+		log.Debugf(ctx, "IDSite %s", err)
 		h.ErrorHandler.ServeHTTP(w, r)
 		return
 	}
 
 	if result.Status == "AUTHENTICATED" {
-		//Login succesfull
+		//Login succesful
+		log.Debugf(ctx, "Login Successful!  Storing Account in Session.")
 		h.storeAccountInSession(result.Account, w, r)
 		http.Redirect(w, r, h.LoginRedirectURI, http.StatusFound)
 	} else {
 		//Logout
+		log.Debugf(ctx, "Logout Successful!  Clearing Account from Session.")
 		h.clearAccountInSession(w, r)
 		http.Redirect(w, r, h.LogoutRedirectURI, http.StatusFound)
 	}
