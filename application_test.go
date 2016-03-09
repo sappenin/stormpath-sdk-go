@@ -1,3 +1,4 @@
+// +build all_tests
 package stormpath_test
 
 import (
@@ -7,18 +8,18 @@ import (
 	"encoding/json"
 
 	"github.com/dgrijalva/jwt-go"
-	. "github.com/sappenin/stormpath-sdk-go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/sappenin/stormpath-sdk-go"
 )
 
 var _ = Describe("Application", func() {
 	Describe("OAuthToken", func() {
 		It("should return a OAuth token response if the user auth is valid", func() {
 			account := newTestAccount()
-			app.RegisterAccount(account)
+			app.RegisterAccount(ctx, account)
 
-			response, err := app.GetOAuthToken(account.Username, "1234567z!A89")
+			response, err := app.GetOAuthToken(ctx, account.Username, "1234567z!A89")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(response).NotTo(BeNil())
@@ -40,7 +41,7 @@ var _ = Describe("Application", func() {
 	Describe("Update", func() {
 		It("should update an existing application", func() {
 			app.Name = "new-name" + randomName()
-			err := app.Update()
+			err := app.Update(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -49,7 +50,7 @@ var _ = Describe("Application", func() {
 	Describe("RegisterAccount", func() {
 		It("should register a new account", func() {
 			account := newTestAccount()
-			err := app.RegisterAccount(account)
+			err := app.RegisterAccount(ctx, account)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(account.Href).NotTo(BeEmpty())
@@ -59,9 +60,9 @@ var _ = Describe("Application", func() {
 	Describe("AuthenticateAccount", func() {
 		It("should authenticate and return the account if the credentials are valid", func() {
 			account := newTestAccount()
-			app.RegisterAccount(account)
+			app.RegisterAccount(ctx, account)
 
-			a, err := app.AuthenticateAccount(account.Email, "1234567z!A89")
+			a, err := app.AuthenticateAccount(ctx, account.Email, "1234567z!A89")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(a.Href).To(Equal(account.Href))
 			Expect(a.GivenName).To(Equal(account.GivenName))
@@ -73,14 +74,14 @@ var _ = Describe("Application", func() {
 	Describe("groups", func() {
 		Describe("CreateGroup", func() {
 			It("should return error is group has no name", func() {
-				err := app.CreateGroup(&Group{})
+				err := app.CreateGroup(ctx, &Group{})
 
 				Expect(err).To(HaveOccurred())
 			})
 
 			It("should create a new application group", func() {
 				group := NewGroup("new-test-group")
-				err := app.CreateGroup(group)
+				err := app.CreateGroup(ctx, group)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(group.Href).NotTo(BeEmpty())
@@ -91,9 +92,9 @@ var _ = Describe("Application", func() {
 		Describe("GetApplicationGroups", func() {
 			It("should return the paged collectionResource of application groups", func() {
 				group := newTestGroup()
-				app.CreateGroup(group)
+				app.CreateGroup(ctx, group)
 
-				groups, err := app.GetGroups(MakeGroupCriteria())
+				groups, err := app.GetGroups(ctx, MakeGroupCriteria())
 
 				Expect(err).NotTo(HaveOccurred())
 
@@ -107,7 +108,7 @@ var _ = Describe("Application", func() {
 	Describe("password reset", func() {
 		Describe("SendPasswordResetEmail", func() {
 			It("should create a new password reset token", func() {
-				token, err := app.SendPasswordResetEmail(account.Email)
+				token, err := app.SendPasswordResetEmail(ctx, account.Email)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(token.Href).NotTo(BeEmpty())
@@ -116,11 +117,11 @@ var _ = Describe("Application", func() {
 
 		Describe("ResetPassword", func() {
 			It("should reset the account password", func() {
-				token, _ := app.SendPasswordResetEmail(account.Email)
+				token, _ := app.SendPasswordResetEmail(ctx, account.Email)
 
 				re := regexp.MustCompile("[^\\/]+$")
 
-				a, err := app.ResetPassword(re.FindString(token.Href), "8787987!kJKJdfW")
+				a, err := app.ResetPassword(ctx, re.FindString(token.Href), "8787987!kJKJdfW")
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(a.Href).To(Equal(account.Href))
@@ -129,18 +130,18 @@ var _ = Describe("Application", func() {
 
 		Describe("ValidatePasswordResetToken", func() {
 			It("should return the reset token if its valid", func() {
-				token, _ := app.SendPasswordResetEmail(account.Email)
+				token, _ := app.SendPasswordResetEmail(ctx, account.Email)
 
 				re := regexp.MustCompile("[^\\/]+$")
 
-				validatedToken, err := app.ValidatePasswordResetToken(re.FindString(token.Href))
+				validatedToken, err := app.ValidatePasswordResetToken(ctx, re.FindString(token.Href))
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(validatedToken.Href).To(Equal(token.Href))
 			})
 
 			It("should return error if the token is invalid", func() {
-				_, err := app.ValidatePasswordResetToken("invalid token")
+				_, err := app.ValidatePasswordResetToken(ctx, "invalid token")
 
 				Expect(err).To(HaveOccurred())
 			})
@@ -148,7 +149,7 @@ var _ = Describe("Application", func() {
 
 		Describe("CreateIDSiteURL", func() {
 			It("Should create valid ID Site URL", func() {
-				idSiteURL, err := app.CreateIDSiteURL(map[string]string{"callbackURI": "http://localhost:8080"})
+				idSiteURL, err := app.CreateIDSiteURL(ctx, map[string]string{"callbackURI": "http://localhost:8080"})
 
 				u, _ := url.Parse(idSiteURL)
 
@@ -175,7 +176,7 @@ var _ = Describe("Application", func() {
 			})
 
 			It("Should create valid ID Site logout URL", func() {
-				idSiteURL, err := app.CreateIDSiteURL(
+				idSiteURL, err := app.CreateIDSiteURL(ctx,
 					map[string]string{
 						"callbackURI": "http://localhost:8080",
 						"logout":      "true",

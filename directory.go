@@ -1,5 +1,7 @@
 package stormpath
 
+import "golang.org/x/net/context"
+
 //Directory represents a Stormpath directory object
 //
 //See: http://docs.stormpath.com/rest/product-guide/#directories
@@ -25,10 +27,10 @@ func NewDirectory(name string) *Directory {
 }
 
 //GetDirectory loads a directory by href and criteria
-func GetDirectory(href string, criteria Criteria) (*Directory, error) {
+func GetDirectory(ctx context.Context, href string, criteria Criteria) (*Directory, error) {
 	directory := &Directory{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(href, criteria.ToQueryString()),
 		emptyPayload(),
 		directory,
@@ -42,18 +44,18 @@ func GetDirectory(href string, criteria Criteria) (*Directory, error) {
 }
 
 //Refresh refreshes the resource by doing a GET to the resource href endpoint
-func (dir *Directory) Refresh() error {
-	return client.get(dir.Href, emptyPayload(), dir)
+func (dir *Directory) Refresh(ctx context.Context) error {
+	return getClient(ctx).get(dir.Href, emptyPayload(), dir)
 }
 
 //Update updates the given resource, by doing a POST to the resource Href
-func (dir *Directory) Update() error {
-	return client.post(dir.Href, dir, dir)
+func (dir *Directory) Update(ctx context.Context) error {
+	return getClient(ctx).post(dir.Href, dir, dir)
 }
 
 //GetAccountCreationPolicy loads the directory account creation policy
-func (dir *Directory) GetAccountCreationPolicy() (*AccountCreationPolicy, error) {
-	err := client.get(buildAbsoluteURL(dir.AccountCreationPolicy.Href), emptyPayload(), dir.AccountCreationPolicy)
+func (dir *Directory) GetAccountCreationPolicy(ctx context.Context) (*AccountCreationPolicy, error) {
+	err := getClient(ctx).get(buildAbsoluteURL(dir.AccountCreationPolicy.Href), emptyPayload(), dir.AccountCreationPolicy)
 
 	if err != nil {
 		return nil, err
@@ -63,8 +65,8 @@ func (dir *Directory) GetAccountCreationPolicy() (*AccountCreationPolicy, error)
 }
 
 //GetGroups returns all the groups from a directory
-func (dir *Directory) GetGroups(criteria Criteria) (*Groups, error) {
-	err := client.get(
+func (dir *Directory) GetGroups(ctx context.Context, criteria Criteria) (*Groups, error) {
+	err := getClient(ctx).get(
 		buildAbsoluteURL(dir.Groups.Href, criteria.ToQueryString()),
 		emptyPayload(),
 		dir.Groups,
@@ -78,24 +80,24 @@ func (dir *Directory) GetGroups(criteria Criteria) (*Groups, error) {
 }
 
 //CreateGroup creates a new group in the directory
-func (dir *Directory) CreateGroup(group *Group) error {
-	return client.post(dir.Groups.Href, group, group)
+func (dir *Directory) CreateGroup(ctx context.Context, group *Group) error {
+	return getClient(ctx).post(dir.Groups.Href, group, group)
 }
 
 //RegisterAccount registers a new account into the directory
 //
 //See: http://docs.stormpath.com/rest/product-guide/#directory-accounts
-func (dir *Directory) RegisterAccount(account *Account) error {
-	return client.post(dir.Accounts.Href, account, account)
+func (dir *Directory) RegisterAccount(ctx context.Context, account *Account) error {
+	return getClient(ctx).post(dir.Accounts.Href, account, account)
 }
 
 //RegisterSocialAccount registers a new account into the application using an external provider Google, Facebook
 //
 //See: http://docs.stormpath.com/rest/product-guide/#accessing-accounts-with-google-authorization-codes-or-an-access-tokens
-func (dir *Directory) RegisterSocialAccount(socialAccount *SocialAccount) (*Account, error) {
+func (dir *Directory) RegisterSocialAccount(ctx context.Context, socialAccount *SocialAccount) (*Account, error) {
 	account := &Account{}
 
-	err := client.post(dir.Accounts.Href, socialAccount, account)
+	err := getClient(ctx).post(dir.Accounts.Href, socialAccount, account)
 
 	if err != nil {
 		return nil, err

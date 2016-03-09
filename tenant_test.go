@@ -9,7 +9,7 @@ import (
 var _ = Describe("Tenant", func() {
 	Describe("CurrentTentant", func() {
 		It("should retrive the current tenant", func() {
-			tenant, err := CurrentTenant()
+			tenant, err := CurrentTenant(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(tenant.Href).NotTo(BeEmpty())
@@ -23,8 +23,8 @@ var _ = Describe("Tenant", func() {
 	Describe("CreateApplication", func() {
 		It("should create a new application", func() {
 			application := newTestApplication()
-			err := tenant.CreateApplication(application)
-			application.Purge()
+			err := tenant.CreateApplication(ctx, application)
+			application.Purge(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(application.Href).NotTo(BeEmpty())
@@ -38,11 +38,11 @@ var _ = Describe("Tenant", func() {
 				"testStringField": "test",
 			}
 
-			updatedCustomData, err := tenant.UpdateCustomData(customData)
+			updatedCustomData, err := tenant.UpdateCustomData(ctx, customData)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(updatedCustomData["testIntField"]).To(Equal(float64(1)))
-			tenant.DeleteCustomData()
+			tenant.DeleteCustomData(ctx)
 		})
 
 		It("GetCustomData should update the given tenant custom data", func() {
@@ -51,9 +51,9 @@ var _ = Describe("Tenant", func() {
 				"testStringField": "test",
 			}
 
-			tenant.UpdateCustomData(customData)
+			tenant.UpdateCustomData(ctx, customData)
 
-			customData, err := tenant.GetCustomData()
+			customData, err := tenant.GetCustomData(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(customData["testIntField"]).To(Equal(float64(1)))
@@ -65,10 +65,10 @@ var _ = Describe("Tenant", func() {
 				"testStringField": "test",
 			}
 
-			tenant.UpdateCustomData(customData)
-			err := tenant.DeleteCustomData()
+			tenant.UpdateCustomData(ctx, customData)
+			err := tenant.DeleteCustomData(ctx)
 
-			customData, _ = tenant.GetCustomData()
+			customData, _ = tenant.GetCustomData(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(customData).To(HaveLen(3))
@@ -98,8 +98,8 @@ var _ = Describe("Tenant", func() {
 	Describe("CreateDirectory", func() {
 		It("should create a new directory", func() {
 			dir := newTestDirectory()
-			err := tenant.CreateDirectory(dir)
-			dir.Delete()
+			err := tenant.CreateDirectory(ctx, dir)
+			dir.Delete(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dir.Href).NotTo(BeEmpty())
@@ -108,9 +108,9 @@ var _ = Describe("Tenant", func() {
 
 	Describe("GetDirectories", func() {
 		It("should retrive all the tenant directories", func() {
-			tenant, _ := CurrentTenant()
+			tenant, _ := CurrentTenant(ctx)
 
-			directories, err := tenant.GetDirectories(MakeDirectoriesCriteria())
+			directories, err := tenant.GetDirectories(ctx, MakeDirectoriesCriteria())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(directories.Href).NotTo(BeEmpty())
@@ -120,9 +120,9 @@ var _ = Describe("Tenant", func() {
 		})
 
 		It("should retrive all the tenant directories by page", func() {
-			tenant, _ := CurrentTenant()
+			tenant, _ := CurrentTenant(ctx)
 
-			directories, err := tenant.GetDirectories(MakeDirectoriesCriteria().Limit(1))
+			directories, err := tenant.GetDirectories(ctx, MakeDirectoriesCriteria().Limit(1))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(directories.Href).NotTo(BeEmpty())
@@ -132,9 +132,9 @@ var _ = Describe("Tenant", func() {
 		})
 
 		It("should retrive all the tenant directories by page and filter", func() {
-			tenant, _ := CurrentTenant()
+			tenant, _ := CurrentTenant(ctx)
 
-			directories, err := tenant.GetDirectories(MakeDirectoriesCriteria().NameEq("Stormpath Administrators"))
+			directories, err := tenant.GetDirectories(ctx, MakeDirectoriesCriteria().NameEq("Stormpath Administrators"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(directories.Href).NotTo(BeEmpty())
@@ -145,9 +145,9 @@ var _ = Describe("Tenant", func() {
 
 	Describe("GetApplications", func() {
 		It("should retrive all the tenant applications", func() {
-			tenant, _ := CurrentTenant()
+			tenant, _ := CurrentTenant(ctx)
 
-			apps, err := tenant.GetApplications(MakeApplicationCriteria())
+			apps, err := tenant.GetApplications(ctx, MakeApplicationCriteria())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(apps.Href).NotTo(BeEmpty())
@@ -157,9 +157,9 @@ var _ = Describe("Tenant", func() {
 		})
 
 		It("should retrive all the tenant applications by page", func() {
-			tenant, _ := CurrentTenant()
+			tenant, _ := CurrentTenant(ctx)
 
-			apps, err := tenant.GetApplications(MakeApplicationCriteria().Offset(0).Limit(1))
+			apps, err := tenant.GetApplications(ctx, MakeApplicationCriteria().Offset(0).Limit(1))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(apps.Href).NotTo(BeEmpty())
@@ -169,9 +169,9 @@ var _ = Describe("Tenant", func() {
 		})
 
 		It("should retrive all the tenant applications by page and filter", func() {
-			tenant, _ := CurrentTenant()
+			tenant, _ := CurrentTenant(ctx)
 
-			apps, err := tenant.GetApplications(MakeApplicationCriteria().NameEq("stormpath"))
+			apps, err := tenant.GetApplications(ctx, MakeApplicationCriteria().NameEq("stormpath"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(apps.Href).NotTo(BeEmpty())

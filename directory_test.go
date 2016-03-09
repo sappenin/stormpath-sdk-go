@@ -1,3 +1,4 @@
+// +build all_tests
 package stormpath_test
 
 import (
@@ -23,8 +24,8 @@ var _ = Describe("Directory", func() {
 		It("should delete an existing directory", func() {
 			directory := newTestDirectory()
 
-			tenant.CreateDirectory(directory)
-			err := directory.Delete()
+			tenant.CreateDirectory(ctx, directory)
+			err := directory.Delete(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -33,9 +34,9 @@ var _ = Describe("Directory", func() {
 	Describe("GetAccountCreationPolicy", func() {
 		It("should retrive the directory account creation policy", func() {
 			directory := newTestDirectory()
-			tenant.CreateDirectory(directory)
+			tenant.CreateDirectory(ctx, directory)
 
-			policy, err := directory.GetAccountCreationPolicy()
+			policy, err := directory.GetAccountCreationPolicy(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(policy).To(Equal(directory.AccountCreationPolicy))
@@ -48,59 +49,59 @@ var _ = Describe("Directory", func() {
 	Describe("GetGroups", func() {
 		It("should retrive all directory groups", func() {
 			directory := newTestDirectory()
-			tenant.CreateDirectory(directory)
+			tenant.CreateDirectory(ctx, directory)
 
-			groups, err := directory.GetGroups(MakeGroupCriteria())
+			groups, err := directory.GetGroups(ctx, MakeGroupCriteria())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(groups.Href).NotTo(BeEmpty())
 			Expect(groups.Offset).To(Equal(0))
 			Expect(groups.Limit).To(Equal(25))
 			Expect(groups.Items).To(BeEmpty())
-			directory.Delete()
+			directory.Delete(ctx)
 		})
 	})
 
 	Describe("GetAccounts", func() {
 		It("should retrieve all directory accounts", func() {
 			directory := newTestDirectory()
-			tenant.CreateDirectory(directory)
+			tenant.CreateDirectory(ctx, directory)
 
-			accounts, err := directory.GetAccounts(MakeAccountCriteria())
+			accounts, err := directory.GetAccounts(ctx, MakeAccountCriteria())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(accounts.Href).NotTo(BeEmpty())
 			Expect(accounts.Offset).To(Equal(0))
 			Expect(accounts.Limit).To(Equal(25))
 			Expect(accounts.Items).To(BeEmpty())
-			directory.Delete()
+			directory.Delete(ctx)
 		})
 	})
 
 	Describe("CreateGroup", func() {
 		It("should create new group", func() {
 			directory := newTestDirectory()
-			tenant.CreateDirectory(directory)
+			tenant.CreateDirectory(ctx, directory)
 
 			group := NewGroup("new-group")
-			err := directory.CreateGroup(group)
+			err := directory.CreateGroup(ctx, group)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(group.Href).NotTo(BeEmpty())
-			directory.Delete()
+			directory.Delete(ctx)
 		})
 	})
 
 	Describe("RegisterAccount", func() {
 		It("should create a new accout for the group", func() {
 			directory := newTestDirectory()
-			tenant.CreateDirectory(directory)
+			tenant.CreateDirectory(ctx, directory)
 
 			account := newTestAccount()
-			err := directory.RegisterAccount(account)
+			err := directory.RegisterAccount(ctx, account)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(account.Href).NotTo(BeEmpty())
-			directory.Delete()
+			directory.Delete(ctx)
 		})
 	})
 })

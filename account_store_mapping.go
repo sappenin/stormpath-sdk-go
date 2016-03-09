@@ -1,5 +1,7 @@
 package stormpath
 
+import "golang.org/x/net/context"
+
 //AccountStoreMapping represents an Stormpath account store mapping
 //
 //See: http://docs.stormpath.com/rest/product-guide/#account-store-mappings
@@ -31,11 +33,11 @@ func NewAccountStoreMapping(applicationHref string, accountStoreHref string) *Ac
 }
 
 //Save saves the given account store mapping
-func (mapping *AccountStoreMapping) Save() error {
+func (mapping *AccountStoreMapping) Save(ctx context.Context) error {
 	url := buildRelativeURL("accountStoreMappings")
 	if mapping.Href != "" {
 		url = mapping.Href
 	}
 
-	return client.post(url, mapping, mapping)
+	return getClient(ctx).post(url, mapping, mapping)
 }

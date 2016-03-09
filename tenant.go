@@ -1,8 +1,11 @@
 package stormpath
 
-import "net/url"
+import (
+	"net/url"
+	"golang.org/x/net/context"
+)
 
-//Tenant represents a Stormpath tennat see http://docs.stormpath.com/rest/product-guide/#tenants
+//Tenant represents a Stormpath tenant see http://docs.stormpath.com/rest/product-guide/#tenants
 type Tenant struct {
 	customDataAwareResource
 	Name         string       `json:"name"`
@@ -12,11 +15,11 @@ type Tenant struct {
 }
 
 //CurrentTenant returns the current tenant see http://docs.stormpath.com/rest/product-guide/#retrieve-the-current-tenant
-func CurrentTenant() (*Tenant, error) {
+func CurrentTenant(ctx context.Context) (*Tenant, error) {
 	tenant := &Tenant{}
 
-	err := client.doWithResult(
-		client.newRequest(
+	err := getClient(ctx).doWithResult(
+		getClient(ctx).newRequest(
 			"GET",
 			buildRelativeURL("tenants", "current"),
 			emptyPayload(),
@@ -29,27 +32,27 @@ func CurrentTenant() (*Tenant, error) {
 //CreateApplication creates a new application for the given tenant
 //
 //See: http://docs.stormpath.com/rest/product-guide/#tenant-applications
-func (tenant *Tenant) CreateApplication(app *Application) error {
+func (tenant *Tenant) CreateApplication(ctx context.Context, app *Application) error {
 	var extraParams = url.Values{}
 	extraParams.Add("createDirectory", "true")
 
-	return client.post(buildRelativeURL("applications", requestParams(extraParams)), app, app)
+	return getClient(ctx).post(buildRelativeURL("applications", requestParams(extraParams)), app, app)
 }
 
 //CreateDirectory creates a new directory for the given tenant
 //
 //See: http://docs.stormpath.com/rest/product-guide/#tenant-directories
-func (tenant *Tenant) CreateDirectory(dir *Directory) error {
-	return client.post(buildRelativeURL("directories"), dir, dir)
+func (tenant *Tenant) CreateDirectory(ctx context.Context, dir *Directory) error {
+	return getClient(ctx).post(buildRelativeURL("directories"), dir, dir)
 }
 
 //GetApplications returns all the applications for the given tenant
 //
 //See: http://docs.stormpath.com/rest/product-guide/#tenant-applications
-func (tenant *Tenant) GetApplications(criteria Criteria) (*Applications, error) {
+func (tenant *Tenant) GetApplications(ctx context.Context, criteria Criteria) (*Applications, error) {
 	apps := &Applications{}
 
-	err := client.get(buildAbsoluteURL(tenant.Applications.Href, criteria.ToQueryString()), emptyPayload(), apps)
+	err := getClient(ctx).get(buildAbsoluteURL(tenant.Applications.Href, criteria.ToQueryString()), emptyPayload(), apps)
 
 	return apps, err
 }
@@ -57,10 +60,10 @@ func (tenant *Tenant) GetApplications(criteria Criteria) (*Applications, error) 
 //GetDirectories returns all the directories for the given tenant
 //
 //See: http://docs.stormpath.com/rest/product-guide/#tenant-directories
-func (tenant *Tenant) GetDirectories(criteria Criteria) (*Directories, error) {
+func (tenant *Tenant) GetDirectories(ctx context.Context, criteria Criteria) (*Directories, error) {
 	directories := &Directories{}
 
-	err := client.get(buildAbsoluteURL(tenant.Directories.Href, criteria.ToQueryString()), emptyPayload(), directories)
+	err := getClient(ctx).get(buildAbsoluteURL(tenant.Directories.Href, criteria.ToQueryString()), emptyPayload(), directories)
 
 	return directories, err
 }

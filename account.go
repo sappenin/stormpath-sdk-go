@@ -1,5 +1,7 @@
 package stormpath
 
+import "golang.org/x/net/context"
+
 //Account represents an Stormpath account object
 //
 //See: http://docs.stormpath.com/rest/product-guide/#accounts
@@ -59,10 +61,27 @@ func NewAccount(username, password, email, givenName, surname string) *Account {
 }
 
 //GetAccount fetches an account by href and criteria
-func GetAccount(href string, criteria Criteria) (*Account, error) {
+func GetAccount(ctx context.Context, href string, criteria Criteria) (*Account, error) {
 	account := &Account{}
 
-	err := client.get(
+	err := getClient(ctx).get(
+		buildAbsoluteURL(href, criteria.ToQueryString()),
+		emptyPayload(),
+		account,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return account, nil
+}
+
+//GetAccount fetches an account by href and criteria
+func (client *Account) GetAccount(ctx context.Context, href string, criteria Criteria) (*Account, error) {
+	account := &Account{}
+
+	err := getClient(ctx).get(
 		buildAbsoluteURL(href, criteria.ToQueryString()),
 		emptyPayload(),
 		account,
@@ -76,20 +95,20 @@ func GetAccount(href string, criteria Criteria) (*Account, error) {
 }
 
 //Refresh refreshes the resource by doing a GET to the resource href endpoint
-func (account *Account) Refresh() error {
-	return client.get(account.Href, emptyPayload(), account)
+func (account *Account) Refresh(ctx context.Context) error {
+	return getClient(ctx).get(account.Href, emptyPayload(), account)
 }
 
 //Update updates the given resource, by doing a POST to the resource Href
-func (account *Account) Update() error {
-	return client.post(account.Href, account, account)
+func (account *Account) Update(ctx context.Context) error {
+	return getClient(ctx).post(account.Href, account, account)
 }
 
 //AddToGroup adds the given account to a given group and returns the respective GroupMembership
-func (account *Account) AddToGroup(group *Group) (*GroupMembership, error) {
+func (account *Account) AddToGroup(ctx context.Context, group *Group) (*GroupMembership, error) {
 	groupMembership := NewGroupMembership(account.Href, group.Href)
 
-	err := client.post(buildRelativeURL("groupMemberships"), groupMembership, groupMembership)
+	err := getClient(ctx).post(buildRelativeURL("groupMemberships"), groupMembership, groupMembership)
 
 	if err != nil {
 		return nil, err
@@ -100,9 +119,8 @@ func (account *Account) AddToGroup(group *Group) (*GroupMembership, error) {
 
 //RemoveFromGroup removes the given account from the given group by searching the account groupmemberships,
 //and deleting the corresponding one
-func (account *Account) RemoveFromGroup(group *Group) error {
-	groupMemberships, err := account.GetGroupMemberships(
-		MakeGroupMemershipCriteria().Offset(0).Limit(25),
+func (account *Account) RemoveFromGroup(ctx context.Context, group *Group) error {
+	groupMemberships, err := account.GetGroupMemberships(ctx, MakeGroupMemershipCriteria().Offset(0).Limit(25),
 	)
 
 	if err != nil {
@@ -112,11 +130,10 @@ func (account *Account) RemoveFromGroup(group *Group) error {
 	for i := 1; len(groupMemberships.Items) > 0; i++ {
 		for _, gm := range groupMemberships.Items {
 			if gm.Group.Href == group.Href {
-				return gm.Delete()
+				return gm.Delete(ctx)
 			}
 		}
-		groupMemberships, err = account.GetGroupMemberships(
-			MakeGroupMemershipCriteria().Offset(i * 25).Limit(25),
+		groupMemberships, err = account.GetGroupMemberships(ctx, MakeGroupMemershipCriteria().Offset(i * 25).Limit(25),
 		)
 		if err != nil {
 			return err
@@ -127,10 +144,10 @@ func (account *Account) RemoveFromGroup(group *Group) error {
 }
 
 //GetGroupMemberships returns a paged result of the group memeberships of the given account
-func (account *Account) GetGroupMemberships(criteria Criteria) (*GroupMemberships, error) {
+func (account *Account) GetGroupMemberships(ctx context.Context, criteria Criteria) (*GroupMemberships, error) {
 	groupMemberships := &GroupMemberships{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(
 			account.GroupMemberships.Href,
 			criteria.ToQueryString(),
@@ -149,10 +166,10 @@ func (account *Account) GetGroupMemberships(criteria Criteria) (*GroupMembership
 //VerifyEmailToken verifies an email verification token associated with an account
 //
 //See: http://docs.stormpath.com/rest/product-guide/#account-verify-email
-func VerifyEmailToken(token string) (*Account, error) {
+func VerifyEmailToken(ctx context.Context, token string) (*Account, error) {
 	account := &Account{}
+	client := getClient(ctx)
 	err := client.post(buildAbsoluteURL(BaseURL, "accounts/emailVerificationTokens", token), emptyPayload(), account)
-
 	if err != nil {
 		return nil, err
 	}

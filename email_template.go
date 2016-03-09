@@ -1,9 +1,11 @@
 package stormpath
 
+import "golang.org/x/net/context"
+
 const (
-	//TextPlain "text/plain" mime type
+//TextPlain "text/plain" mime type
 	TextPlain = "text/plain"
-	//TextHTML "text/html" mime type
+//TextHTML "text/html" mime type
 	TextHTML = "text/html"
 )
 
@@ -26,10 +28,10 @@ type EmailTemplates struct {
 }
 
 //GetEmailTemplate loads an email template by href
-func GetEmailTemplate(href string) (*EmailTemplate, error) {
+func GetEmailTemplate(ctx context.Context, href string) (*EmailTemplate, error) {
 	emailTemplate := &EmailTemplate{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		href,
 		emptyPayload(),
 		emailTemplate,
@@ -43,11 +45,11 @@ func GetEmailTemplate(href string) (*EmailTemplate, error) {
 }
 
 //Refresh refreshes the resource by doing a GET to the resource href endpoint
-func (template *EmailTemplate) Refresh() error {
-	return client.get(template.Href, emptyPayload(), template)
+func (template *EmailTemplate) Refresh(ctx context.Context) error {
+	return getClient(ctx).get(template.Href, emptyPayload(), template)
 }
 
 //Update updates the given resource, by doing a POST to the resource Href
-func (template *EmailTemplate) Update() error {
-	return client.post(template.Href, template, template)
+func (template *EmailTemplate) Update(ctx context.Context) error {
+	return getClient(ctx).post(template.Href, template, template)
 }

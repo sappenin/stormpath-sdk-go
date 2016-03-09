@@ -8,6 +8,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/nu7hatch/gouuid"
+	"golang.org/x/net/context"
 )
 
 //Application represents a Stormpath application object
@@ -55,10 +56,10 @@ func NewApplication(name string) *Application {
 }
 
 //GetApplication loads an application by href and criteria
-func GetApplication(href string, criteria Criteria) (*Application, error) {
+func GetApplication(ctx context.Context, href string, criteria Criteria) (*Application, error) {
 	application := &Application{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(href, criteria.ToQueryString()),
 		emptyPayload(),
 		application,
@@ -68,37 +69,37 @@ func GetApplication(href string, criteria Criteria) (*Application, error) {
 }
 
 //Refresh refreshes the resource by doing a GET to the resource href endpoint
-func (app *Application) Refresh() error {
-	return client.get(app.Href, emptyPayload(), app)
+func (app *Application) Refresh(ctx context.Context) error {
+	return getClient(ctx).get(app.Href, emptyPayload(), app)
 }
 
 //Update updates the given resource, by doing a POST to the resource Href
-func (app *Application) Update() error {
-	return client.post(app.Href, app, app)
+func (app *Application) Update(ctx context.Context) error {
+	return getClient(ctx).post(app.Href, app, app)
 }
 
 //Purge deletes all the account stores before deleting the application
 //
 //See: http://docs.stormpath.com/rest/product-guide/#delete-an-application
-func (app *Application) Purge() error {
-	accountStoreMappings, err := app.GetAccountStoreMappings(MakeAccountStoreMappingCriteria().Offset(0).Limit(25))
+func (app *Application) Purge(ctx context.Context) error {
+	accountStoreMappings, err := app.GetAccountStoreMappings(ctx, MakeAccountStoreMappingCriteria().Offset(0).Limit(25))
 	if err != nil {
 		return err
 	}
 	for _, m := range accountStoreMappings.Items {
-		client.delete(m.AccountStore.Href, emptyPayload())
+		getClient(ctx).delete(m.AccountStore.Href, emptyPayload())
 	}
 
-	return app.Delete()
+	return app.Delete(ctx)
 }
 
 //GetAccountStoreMappings returns all the applications account store mappings
 //
 //See: http://docs.stormpath.com/rest/product-guide/#application-account-store-mappings
-func (app *Application) GetAccountStoreMappings(criteria Criteria) (*AccountStoreMappings, error) {
+func (app *Application) GetAccountStoreMappings(ctx context.Context, criteria Criteria) (*AccountStoreMappings, error) {
 	accountStoreMappings := &AccountStoreMappings{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(app.AccountStoreMappings.Href, criteria.ToQueryString()),
 		emptyPayload(),
 		accountStoreMappings,
@@ -114,8 +115,8 @@ func (app *Application) GetAccountStoreMappings(criteria Criteria) (*AccountStor
 //RegisterAccount registers a new account into the application
 //
 //See: http://docs.stormpath.com/rest/product-guide/#application-accounts
-func (app *Application) RegisterAccount(account *Account) error {
-	err := client.post(app.Accounts.Href, account, account)
+func (app *Application) RegisterAccount(ctx context.Context, account *Account) error {
+	err := getClient(ctx).post(app.Accounts.Href, account, account)
 	if err == nil {
 		//Password should be cleanup so we don't keep an unhash password in memory
 		account.Password = ""
@@ -126,10 +127,10 @@ func (app *Application) RegisterAccount(account *Account) error {
 //RegisterSocialAccount registers a new account into the application using an external provider Google, Facebook
 //
 //See: http://docs.stormpath.com/rest/product-guide/#accessing-accounts-with-google-authorization-codes-or-an-access-tokens
-func (app *Application) RegisterSocialAccount(socialAccount *SocialAccount) (*Account, error) {
+func (app *Application) RegisterSocialAccount(ctx context.Context, socialAccount *SocialAccount) (*Account, error) {
 	account := &Account{}
 
-	err := client.post(app.Accounts.Href, socialAccount, account)
+	err := getClient(ctx).post(app.Accounts.Href, socialAccount, account)
 
 	if err != nil {
 		return nil, err
@@ -141,21 +142,21 @@ func (app *Application) RegisterSocialAccount(socialAccount *SocialAccount) (*Ac
 //AuthenticateAccount authenticates an account against the application
 //
 //See: http://docs.stormpath.com/rest/product-guide/#authenticate-an-account
-func (app *Application) AuthenticateAccount(username string, password string) (*Account, error) {
+func (app *Application) AuthenticateAccount(ctx context.Context, username string, password string) (*Account, error) {
 	accountRef := &accountRef{Account: &Account{}}
 
 	loginAttemptPayload := make(map[string]string)
 	loginAttemptPayload["type"] = "basic"
 	loginAttemptPayload["value"] = base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
 
-	err := client.post(buildAbsoluteURL(app.Href, "loginAttempts"), loginAttemptPayload, accountRef)
+	err := getClient(ctx).post(buildAbsoluteURL(app.Href, "loginAttempts"), loginAttemptPayload, accountRef)
 
 	if err != nil {
 		return nil, err
 	}
 
 	account := accountRef.Account
-	err = account.Refresh()
+	err = account.Refresh(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +165,7 @@ func (app *Application) AuthenticateAccount(username string, password string) (*
 }
 
 //GetOAuthToken creates a OAuth2 token response for a given user credentials
-func (app *Application) GetOAuthToken(username string, password string) (*OAuthResponse, error) {
+func (app *Application) GetOAuthToken(ctx context.Context, username string, password string) (*OAuthResponse, error) {
 	response := &OAuthResponse{}
 
 	values := url.Values{
@@ -174,7 +175,7 @@ func (app *Application) GetOAuthToken(username string, password string) (*OAuthR
 	}
 	body := canonicalizeQueryString(values)
 
-	err := client.postURLEncodedForm(
+	err := getClient(ctx).postURLEncodedForm(
 		buildAbsoluteURL(app.Href, "oauth/token"),
 		body,
 		response,
@@ -190,13 +191,13 @@ func (app *Application) GetOAuthToken(username string, password string) (*OAuthR
 //SendPasswordResetEmail sends a password reset email to the given user
 //
 //See: http://docs.stormpath.com/rest/product-guide/#reset-an-accounts-password
-func (app *Application) SendPasswordResetEmail(email string) (*AccountPasswordResetToken, error) {
+func (app *Application) SendPasswordResetEmail(ctx context.Context, email string) (*AccountPasswordResetToken, error) {
 	passwordResetToken := &AccountPasswordResetToken{}
 
 	passwordResetPayload := make(map[string]string)
 	passwordResetPayload["email"] = email
 
-	err := client.post(buildAbsoluteURL(app.Href, "passwordResetTokens"), passwordResetPayload, passwordResetToken)
+	err := getClient(ctx).post(buildAbsoluteURL(app.Href, "passwordResetTokens"), passwordResetPayload, passwordResetToken)
 
 	if err != nil {
 		return nil, err
@@ -208,10 +209,10 @@ func (app *Application) SendPasswordResetEmail(email string) (*AccountPasswordRe
 //ValidatePasswordResetToken validates a password reset token
 //
 //See: http://docs.stormpath.com/rest/product-guide/#reset-an-accounts-password
-func (app *Application) ValidatePasswordResetToken(token string) (*AccountPasswordResetToken, error) {
+func (app *Application) ValidatePasswordResetToken(ctx context.Context, token string) (*AccountPasswordResetToken, error) {
 	passwordResetToken := &AccountPasswordResetToken{}
 
-	err := client.get(buildAbsoluteURL(app.Href, "passwordResetTokens", token), emptyPayload(), passwordResetToken)
+	err := getClient(ctx).get(buildAbsoluteURL(app.Href, "passwordResetTokens", token), emptyPayload(), passwordResetToken)
 
 	if err != nil {
 		return nil, err
@@ -223,14 +224,14 @@ func (app *Application) ValidatePasswordResetToken(token string) (*AccountPasswo
 //ResetPassword resets a user password based on the reset token
 //
 //See: http://docs.stormpath.com/rest/product-guide/#reset-an-accounts-password
-func (app *Application) ResetPassword(token string, newPassword string) (*Account, error) {
+func (app *Application) ResetPassword(ctx context.Context, token string, newPassword string) (*Account, error) {
 	accountRef := &accountRef{}
 	account := &Account{}
 
 	resetPasswordPayload := make(map[string]string)
 	resetPasswordPayload["password"] = newPassword
 
-	err := client.post(buildAbsoluteURL(app.Href, "passwordResetTokens", token), resetPasswordPayload, accountRef)
+	err := getClient(ctx).post(buildAbsoluteURL(app.Href, "passwordResetTokens", token), resetPasswordPayload, accountRef)
 
 	if err != nil {
 		return nil, err
@@ -243,17 +244,17 @@ func (app *Application) ResetPassword(token string, newPassword string) (*Accoun
 //CreateGroup creates a new group in the application
 //
 //See: http://docs.stormpath.com/rest/product-guide/#application-groups
-func (app *Application) CreateGroup(group *Group) error {
-	return client.post(app.Groups.Href, group, group)
+func (app *Application) CreateGroup(ctx context.Context, group *Group) error {
+	return getClient(ctx).post(app.Groups.Href, group, group)
 }
 
 //GetGroups returns all the application groups
 //
 //See: http://docs.stormpath.com/rest/product-guide/#application-groups
-func (app *Application) GetGroups(criteria Criteria) (*Groups, error) {
+func (app *Application) GetGroups(ctx context.Context, criteria Criteria) (*Groups, error) {
 	groups := &Groups{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(app.Groups.Href, criteria.ToQueryString()),
 		emptyPayload(),
 		groups,
@@ -267,7 +268,7 @@ func (app *Application) GetGroups(criteria Criteria) (*Groups, error) {
 }
 
 //CreateIDSiteURL creates the IDSite URL for the application
-func (app *Application) CreateIDSiteURL(options map[string]string) (string, error) {
+func (app *Application) CreateIDSiteURL(ctx context.Context, options map[string]string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	nonce, _ := uuid.NewV4()
@@ -278,13 +279,13 @@ func (app *Application) CreateIDSiteURL(options map[string]string) (string, erro
 
 	token.Claims["jti"] = nonce.String()
 	token.Claims["iat"] = time.Now().Unix()
-	token.Claims["iss"] = client.Credentials.ID
+	token.Claims["iss"] = getClient(ctx).Credentials.ID
 	token.Claims["sub"] = app.Href
 	token.Claims["state"] = options["state"]
 	token.Claims["path"] = options["path"]
 	token.Claims["cb_uri"] = options["callbackURI"]
 
-	tokenString, err := token.SignedString([]byte(client.Credentials.Secret))
+	tokenString, err := token.SignedString([]byte(getClient(ctx).Credentials.Secret))
 	if err != nil {
 		return "", err
 	}
@@ -303,7 +304,7 @@ func (app *Application) CreateIDSiteURL(options map[string]string) (string, erro
 
 //HandleIDSiteCallback handles the URL from an ID Site callback it parses the JWT token
 //validates it and return an IDSiteCallbackResult with the token info + the Account if the sub was given
-func (app *Application) HandleIDSiteCallback(URL string) (*IDSiteCallbackResult, error) {
+func (app *Application) HandleIDSiteCallback(ctx context.Context, URL string) (*IDSiteCallbackResult, error) {
 	result := &IDSiteCallbackResult{}
 
 	cbURL, err := url.Parse(URL)
@@ -314,13 +315,13 @@ func (app *Application) HandleIDSiteCallback(URL string) (*IDSiteCallbackResult,
 	jwtResponse := cbURL.Query().Get("jwtResponse")
 
 	token, err := jwt.Parse(jwtResponse, func(token *jwt.Token) (interface{}, error) {
-		return []byte(client.Credentials.Secret), nil
+		return []byte(getClient(ctx).Credentials.Secret), nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	if token.Claims["aud"].(string) != client.Credentials.ID {
+	if token.Claims["aud"].(string) != getClient(ctx).Credentials.ID {
 		return nil, errors.New("ID Site invalid aud")
 	}
 
@@ -329,7 +330,7 @@ func (app *Application) HandleIDSiteCallback(URL string) (*IDSiteCallbackResult,
 	}
 
 	if token.Claims["sub"] != nil {
-		account, err := GetAccount(token.Claims["sub"].(string), MakeAccountCriteria())
+		account, err := GetAccount(ctx, token.Claims["sub"].(string), MakeAccountCriteria())
 		if err != nil {
 			return nil, err
 		}

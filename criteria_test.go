@@ -1,3 +1,4 @@
+// +build all_tests
 package stormpath_test
 
 import (

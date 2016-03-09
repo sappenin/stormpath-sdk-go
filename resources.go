@@ -3,6 +3,7 @@ package stormpath
 import (
 	"strings"
 	"time"
+	"golang.org/x/net/context"
 )
 
 //collectionResource represent the basic attributes of collection of resources (Application, Group, Account, etc.)
@@ -30,8 +31,8 @@ func (r resource) IsCacheable() bool {
 }
 
 //Delete deletes the given account, it wont modify the calling account
-func (r *resource) Delete() error {
-	return client.delete(r.Href, emptyPayload())
+func (r *resource) Delete(ctx context.Context) error {
+	return getClient(ctx).delete(r.Href, emptyPayload())
 }
 
 type accountStoreResource struct {
@@ -42,10 +43,10 @@ type accountStoreResource struct {
 //GetAccounts returns all the accounts of the application
 //
 //See: http://docs.stormpath.com/rest/product-guide/#application-accounts
-func (r *accountStoreResource) GetAccounts(criteria Criteria) (*Accounts, error) {
+func (r *accountStoreResource) GetAccounts(ctx context.Context, criteria Criteria) (*Accounts, error) {
 	accounts := &Accounts{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(r.Accounts.Href, criteria.ToQueryString()),
 		emptyPayload(),
 		accounts,
@@ -55,5 +56,5 @@ func (r *accountStoreResource) GetAccounts(criteria Criteria) (*Accounts, error)
 }
 
 func GetToken(href string) string {
-	return href[strings.LastIndex(href, "/")+1:]
+	return href[strings.LastIndex(href, "/") + 1:]
 }

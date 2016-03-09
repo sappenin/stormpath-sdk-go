@@ -1,5 +1,7 @@
 package stormpath
 
+import "golang.org/x/net/context"
+
 type GroupMembership struct {
 	resource
 	Account Account `json:"account"`
@@ -22,10 +24,10 @@ func NewGroupMembership(accountHref string, groupHref string) *GroupMembership {
 	}
 }
 
-func (groupmembership *GroupMembership) GetAccount(criteria Criteria) (*Account, error) {
+func (groupmembership *GroupMembership) GetAccount(ctx context.Context, criteria Criteria) (*Account, error) {
 	account := &Account{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(groupmembership.Account.Href, criteria.ToQueryString()),
 		emptyPayload(),
 		account,
@@ -38,10 +40,10 @@ func (groupmembership *GroupMembership) GetAccount(criteria Criteria) (*Account,
 	return account, nil
 }
 
-func (groupmembership *GroupMembership) GetGroup(criteria Criteria) (*Group, error) {
+func (groupmembership *GroupMembership) GetGroup(ctx context.Context, criteria Criteria) (*Group, error) {
 	group := &Group{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(groupmembership.Group.Href, criteria.ToQueryString()),
 		emptyPayload(),
 		group,

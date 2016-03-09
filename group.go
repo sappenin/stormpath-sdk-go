@@ -1,5 +1,7 @@
 package stormpath
 
+import "golang.org/x/net/context"
+
 //Group represents a Stormpath Group
 //
 //See: http://docs.stormpath.com/rest/product-guide/#groups
@@ -24,10 +26,10 @@ func NewGroup(name string) *Group {
 }
 
 //GetGroup loads a group by href and criteria
-func GetGroup(href string, criteria Criteria) (*Group, error) {
+func GetGroup(ctx context.Context, href string, criteria Criteria) (*Group, error) {
 	group := &Group{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(href, criteria.ToQueryString()),
 		emptyPayload(),
 		group,
@@ -41,20 +43,20 @@ func GetGroup(href string, criteria Criteria) (*Group, error) {
 }
 
 //Refresh refreshes the resource by doing a GET to the resource href endpoint
-func (group *Group) Refresh() error {
-	return client.get(group.Href, emptyPayload(), group)
+func (group *Group) Refresh(ctx context.Context) error {
+	return getClient(ctx).get(group.Href, emptyPayload(), group)
 }
 
 //Update updates the given resource, by doing a POST to the resource Href
-func (group *Group) Update() error {
-	return client.post(group.Href, group, group)
+func (group *Group) Update(ctx context.Context) error {
+	return getClient(ctx).post(group.Href, group, group)
 }
 
 //GetGroupMemberships loads the given group memeberships
-func (group *Group) GetGroupMemberships(criteria Criteria) (*GroupMemberships, error) {
+func (group *Group) GetGroupMemberships(ctx context.Context, criteria Criteria) (*GroupMemberships, error) {
 	groupMemberships := &GroupMemberships{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(group.Href, "accountMemberships", criteria.ToQueryString()),
 		emptyPayload(),
 		groupMemberships,

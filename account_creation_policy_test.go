@@ -1,3 +1,4 @@
+// +build all_tests
 package stormpath_test
 
 import (
@@ -7,12 +8,13 @@ import (
 )
 
 var _ = Describe("AccountCreationPolicy", func() {
+
 	Describe("GetVerificationEmailTemplates", func() {
 		It("should return an error if the policy doesn't exists", func() {
 			policy := &AccountCreationPolicy{VerificationEmailTemplates: &EmailTemplates{}}
 			policy.VerificationEmailTemplates.Href = "https://api.stormpath.com/v1/accountCreationPolicies/xxxx/verificationEmailTemplates"
 
-			templates, err := policy.GetVerificationEmailTemplates()
+			templates, err := policy.GetVerificationEmailTemplates(ctx)
 
 			Expect(err).To(HaveOccurred())
 			Expect(templates).To(BeNil())
@@ -20,11 +22,11 @@ var _ = Describe("AccountCreationPolicy", func() {
 
 		It("should return the default verification email templates collection", func() {
 			directory := newTestDirectory()
-			tenant.CreateDirectory(directory)
+			tenant.CreateDirectory(ctx, directory)
 
-			policy, _ := directory.GetAccountCreationPolicy()
+			policy, _ := directory.GetAccountCreationPolicy(ctx)
 
-			templates, err := policy.GetVerificationEmailTemplates()
+			templates, err := policy.GetVerificationEmailTemplates(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(templates.Items).To(HaveLen(1))
@@ -35,7 +37,7 @@ var _ = Describe("AccountCreationPolicy", func() {
 			policy := &AccountCreationPolicy{VerificationSuccessEmailTemplates: &EmailTemplates{}}
 			policy.VerificationSuccessEmailTemplates.Href = "https://api.stormpath.com/v1/accountCreationPolicies/xxxx/verificationEmailTemplates"
 
-			templates, err := policy.GetVerificationSuccessEmailTemplates()
+			templates, err := policy.GetVerificationSuccessEmailTemplates(ctx)
 
 			Expect(err).To(HaveOccurred())
 			Expect(templates).To(BeNil())
@@ -43,11 +45,11 @@ var _ = Describe("AccountCreationPolicy", func() {
 
 		It("should return the default verification success email templates collection", func() {
 			directory := newTestDirectory()
-			tenant.CreateDirectory(directory)
+			tenant.CreateDirectory(ctx, directory)
 
-			policy, _ := directory.GetAccountCreationPolicy()
+			policy, _ := directory.GetAccountCreationPolicy(ctx)
 
-			templates, err := policy.GetVerificationSuccessEmailTemplates()
+			templates, err := policy.GetVerificationSuccessEmailTemplates(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(templates.Items).To(HaveLen(1))
@@ -58,7 +60,7 @@ var _ = Describe("AccountCreationPolicy", func() {
 			policy := &AccountCreationPolicy{WelcomeEmailTemplates: &EmailTemplates{}}
 			policy.WelcomeEmailTemplates.Href = "https://api.stormpath.com/v1/accountCreationPolicies/xxxx/verificationEmailTemplates"
 
-			templates, err := policy.GetWelcomeEmailTemplates()
+			templates, err := policy.GetWelcomeEmailTemplates(ctx)
 
 			Expect(err).To(HaveOccurred())
 			Expect(templates).To(BeNil())
@@ -66,11 +68,11 @@ var _ = Describe("AccountCreationPolicy", func() {
 
 		It("should return the default welcome email templates collection", func() {
 			directory := newTestDirectory()
-			tenant.CreateDirectory(directory)
+			tenant.CreateDirectory(ctx, directory)
 
-			policy, _ := directory.GetAccountCreationPolicy()
+			policy, _ := directory.GetAccountCreationPolicy(ctx)
 
-			templates, err := policy.GetWelcomeEmailTemplates()
+			templates, err := policy.GetWelcomeEmailTemplates(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(templates.Items).To(HaveLen(1))
@@ -79,11 +81,11 @@ var _ = Describe("AccountCreationPolicy", func() {
 	Describe("Update", func() {
 		It("should update a given account creation policy", func() {
 			directory := newTestDirectory()
-			tenant.CreateDirectory(directory)
+			tenant.CreateDirectory(ctx, directory)
 
-			policy, _ := directory.GetAccountCreationPolicy()
+			policy, _ := directory.GetAccountCreationPolicy(ctx)
 			policy.VerificationEmailStatus = Enabled
-			err := policy.Update()
+			err := policy.Update(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(policy.VerificationEmailStatus).To(Equal(Enabled))
@@ -92,7 +94,7 @@ var _ = Describe("AccountCreationPolicy", func() {
 			policy := AccountCreationPolicy{}
 			policy.Href = BaseURL + "accountCreationPolicies/XXXX"
 
-			err := policy.Update()
+			err := policy.Update(ctx)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.(Error).Status).To(Equal(404))
@@ -101,11 +103,11 @@ var _ = Describe("AccountCreationPolicy", func() {
 	Describe("Refresh", func() {
 		It("should refresh a given account creation policy", func() {
 			directory := newTestDirectory()
-			tenant.CreateDirectory(directory)
+			tenant.CreateDirectory(ctx, directory)
 
-			policy, _ := directory.GetAccountCreationPolicy()
+			policy, _ := directory.GetAccountCreationPolicy(ctx)
 			policy.VerificationEmailStatus = Enabled
-			err := policy.Refresh()
+			err := policy.Refresh(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(policy.VerificationEmailStatus).To(Equal(Disabled))
@@ -114,7 +116,7 @@ var _ = Describe("AccountCreationPolicy", func() {
 			policy := AccountCreationPolicy{}
 			policy.Href = BaseURL + "accountCreationPolicies/XXXX"
 
-			err := policy.Refresh()
+			err := policy.Refresh(ctx)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.(Error).Status).To(Equal(404))
