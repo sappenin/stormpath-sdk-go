@@ -52,11 +52,11 @@ type OAuthResponse struct {
 
 type AccessToken struct {
 	resource
-	Account      *Account               `json:"account,omitempty"`
-	Tenant       *Tenant                `json:"tenant,omitempty"`
-	Application  *Application           `json:"application,omitempty"`
-	JWT          string                 `json:"jwt"`
-	ExpandedJWT  map[string]interface{} `json:"expandedJwt"`
+	Account     *Account               `json:"account,omitempty"`
+	Tenant      *Tenant                `json:"tenant,omitempty"`
+	Application *Application           `json:"application,omitempty"`
+	JWT         string                 `json:"jwt"`
+	ExpandedJWT map[string]interface{} `json:"expandedJwt"`
 }
 
 //NewApplication creates a new application
@@ -198,10 +198,10 @@ func (app *Application) GetOAuthToken(ctx context.Context, username string, pass
 }
 
 //Validate Token against Application
-func (app *Application) ValidateToken(token string) (*AccessToken, error) {
+func (app *Application) ValidateToken(ctx context.Context, token string) (*AccessToken, error) {
 	response := &AccessToken{}
 
-	err := client.get(
+	err := getClient(ctx).get(
 		buildAbsoluteURL(app.Href, "authTokens", token),
 		emptyPayload(),
 		response,
