@@ -36,20 +36,21 @@ import "fmt"
 //then it would look for os.Getenv("HOME") + "/.config/stormpath/apiKey.properties" for the credentials
 credentials, _ := stormpath.NewDefaultCredentials()
 
-// Caching is optional.  This line creates cache with a default expiration time of 5 minutes, and which purges expired items every 30 seconds
+// Caching is optional.  This line creates cache with a default expiration time of 5 minutes, and which 
+// purges expired items every 30 seconds
 var c *cache.Cache = cache.New(5 * time.Minute, 30 * time.Second)
 
 // Init with Cache.  Pass nil instead for no caching.
 stormpath.Init(credentials, stormpath.CacheableCache{Cache: c})
 
-// r is of type *http.Request.  All client usaeg must be in the context of a request so that the appengine.Context can be properly populated.
+// r is of type *http.Request.  All client usage must be in the context of a request so that the 
+// appengine.Context can be properly populated.
 ctx := appengine.NewContext(r)
-
 
 //Get the current tenant
 tenant, _ := stormpath.CurrentTenant(ctx)
 
-//Get the tenat applications
+//Get the tenant applications
 apps, _ := tenant.GetApplications(ctx, stormpath.MakeApplicationCriteria().NameEq("test app"))
 
 //Get the first application
@@ -104,6 +105,7 @@ I'm aiming at 85% test coverage not yet met but thats the goal.
 # License
 
 Copyright 2014, 2015 Julio Arias
+Copyright 2016 Sappenin Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
