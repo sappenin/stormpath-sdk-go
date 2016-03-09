@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/dmotylev/goproperties"
+	"log"
 )
 
 //Credentials represents a set of Stormpath credentials
@@ -34,6 +35,7 @@ func NewDefaultCredentials() (Credentials, error) {
 	apiKeyID := os.Getenv("STORMPATH_API_KEY_ID")
 	apiKeySecret := os.Getenv("STORMPATH_API_KEY_SECRET")
 	if apiKeyID != "" && apiKeySecret != "" {
+		log.Printf("Credentials found in ENV!")
 		return Credentials{apiKeyID, apiKeySecret}, nil
 	}
 	return NewCredentialsFromFile(os.Getenv("HOME") + "/.config/stormpath/apiKey.properties")

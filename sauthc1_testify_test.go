@@ -8,10 +8,7 @@ import (
 	"github.com/sappenin/stormpath-sdk-go"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"os"
-	"log"
 	"strings"
-	"fmt"
 )
 
 // The original StormPath client (https://github.com/jarias/stormpath-sdk-go) has two problems when SAuthc1 Digests are computed inside of AppEngine.  First,
@@ -20,24 +17,22 @@ import (
 // errors depending on the environment (i.e., dev server, appengine production, etc).  This set of tests validates each scenario.
 
 func init() {
-	var STORMPATH_API_KEY_ID = os.Getenv("STORMPATH_API_KEY_ID")
-	log.Printf("STORMPATH_API_KEY_ID: %v", STORMPATH_API_KEY_ID)
-
-	var STORMPATH_API_KEY_SECRET = os.Getenv("STORMPATH_API_KEY_SECRET")
-	log.Printf("STORMPATH_API_KEY_SECRET: %v", STORMPATH_API_KEY_SECRET)
-
-	cred = stormpath.Credentials{ID: STORMPATH_API_KEY_ID, Secret: STORMPATH_API_KEY_SECRET}
+	var err error
+	cred, err = stormpath.NewDefaultCredentials()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestKnownSAuthc1ForUrlFetch_StormPath(t *testing.T) {
 	assert.NotNil(t, cred.ID)
 	assert.NotNil(t, cred.Secret)
 
-	log.Printf("Assemling request...")
+	//log.Printf("Assemling request...")
 	ds := "20160308T230740Z"
 
 	req, _ := http.NewRequest("GET", "https://api.stormpath.com/v1/tenants/current", nil)
-	log.Printf("Request assembled!")
+	//log.Printf("Request assembled!")
 
 	req.Header = map[string][]string{
 		"Host": []string{"api.stormpath.com"},
@@ -46,7 +41,7 @@ func TestKnownSAuthc1ForUrlFetch_StormPath(t *testing.T) {
 		"Content-Type": []string{"application/json"},
 
 	}
-	fmt.Printf("Request was: %#v", req)
+	//fmt.Printf("Request was: %#v", req)
 
 	now, err := time.Parse(stormpath.TimestampFormat, ds)
 	if err != nil {
@@ -69,11 +64,11 @@ func TestKnownSAuthc1ForUrlFetch_RequestBin(t *testing.T) {
 	assert.NotNil(t, cred.ID)
 	assert.NotNil(t, cred.Secret)
 
-	log.Printf("Assemling request...")
+	//log.Printf("Assemling request...")
 	ds := "20160308T221346Z"
 
 	req, _ := http.NewRequest("GET", "https://requestb.in/1kvzjhg1", nil)
-	log.Printf("Request assembled!")
+	//log.Printf("Request assembled!")
 
 	req.Header = map[string][]string{
 		"Host": []string{"requestb.in"},
@@ -81,7 +76,7 @@ func TestKnownSAuthc1ForUrlFetch_RequestBin(t *testing.T) {
 		"Accept": []string{"application/json"},
 		"Content-Type": []string{"application/json"},
 	}
-	fmt.Printf("Request was: %#v", req)
+	//fmt.Printf("Request was: %#v", req)
 
 	now, err := time.Parse(stormpath.TimestampFormat, ds)
 	if err != nil {
@@ -102,11 +97,11 @@ func TestKnownSAuthc1ForUrlFetch_StormPathAccounts_GET(t *testing.T) {
 	assert.NotNil(t, cred.ID)
 	assert.NotNil(t, cred.Secret)
 
-	log.Printf("Assemling request...")
+	//log.Printf("Assemling request...")
 	ds := "20160309T002222Z"
 
 	req, _ := http.NewRequest("GET", "https://api.stormpath.com/v1/applications/4jIEdHsNp17DWMQd8HTKQY/accountStoreMappings/?limit=25&offset=0", nil)
-	log.Printf("Request assembled!")
+	//log.Printf("Request assembled!")
 
 	req.Header = map[string][]string{
 		"Host": []string{"api.stormpath.com"},
@@ -114,7 +109,7 @@ func TestKnownSAuthc1ForUrlFetch_StormPathAccounts_GET(t *testing.T) {
 		"Accept": []string{"application/json"},
 		"Content-Type": []string{"application/json"},
 	}
-	fmt.Printf("Request was: %#v", req)
+	//fmt.Printf("Request was: %#v", req)
 
 	now, err := time.Parse(stormpath.TimestampFormat, ds)
 	if err != nil {
@@ -135,11 +130,11 @@ func TestKnownSAuthc1ForUrlFetch_Delete(t *testing.T) {
 	assert.NotNil(t, cred.ID)
 	assert.NotNil(t, cred.Secret)
 
-	log.Printf("Assemling request...")
+	//log.Printf("Assemling request...")
 	ds := "20160309T002224Z"
 
 	req, _ := http.NewRequest("DELETE", "https://api.stormpath.com/v1/directories/4jJ4VvOa3wljEdUFZr7L3W", nil)
-	log.Printf("Request assembled!")
+	//log.Printf("Request assembled!")
 
 	req.Header = map[string][]string{
 		"Host": []string{"api.stormpath.com"},
@@ -147,7 +142,7 @@ func TestKnownSAuthc1ForUrlFetch_Delete(t *testing.T) {
 		"Accept": []string{"application/json"},
 		"Content-Type": []string{"application/json"},
 	}
-	fmt.Printf("Request was: %#v", req)
+	//fmt.Printf("Request was: %#v", req)
 
 	now, err := time.Parse(stormpath.TimestampFormat, ds)
 	if err != nil {

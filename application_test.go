@@ -30,10 +30,10 @@ var _ = Describe("Application", func() {
 
 		It("should validate an OAuth AccessToken token response if the token is valid", func() {
 			account := newTestAccount()
-			app.RegisterAccount(account)
+			app.RegisterAccount(ctx,account)
 
-			response, err := app.GetOAuthToken(account.Username, "1234567z!A89")
-			token, err := app.ValidateToken(response.AccessToken)
+			response, err := app.GetOAuthToken(ctx,account.Username, "1234567z!A89")
+			token, err := app.ValidateToken(ctx,response.AccessToken)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(token).NotTo(BeNil())
@@ -41,7 +41,7 @@ var _ = Describe("Application", func() {
 		})
 
 		It("should validate an OAuth AccessToken token response if the token is valid", func() {
-			_, err := app.ValidateToken("anInvalidToken")
+			_, err := app.ValidateToken(ctx,"anInvalidToken")
 			Expect(err).To(HaveOccurred())
 		})
 	})
