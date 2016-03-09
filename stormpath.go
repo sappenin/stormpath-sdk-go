@@ -13,7 +13,6 @@ import (
 	uuid "github.com/nu7hatch/gouuid"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/net/context"
-	"log"
 	"errors"
 	"google.golang.org/appengine/urlfetch"
 	"runtime"
@@ -63,8 +62,6 @@ func getClient(ctx context.Context) *Client {
 	httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return checkRedirect(client, req, via)
 	}
-
-	log.Printf("Credentials: %#v", _credentials)
 	return client
 }
 

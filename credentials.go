@@ -38,5 +38,6 @@ func NewDefaultCredentials() (Credentials, error) {
 		log.Printf("Credentials found in ENV!")
 		return Credentials{apiKeyID, apiKeySecret}, nil
 	}
+	log.Printf("Credentials NOT FOUND in ENV!")
 	return NewCredentialsFromFile(os.Getenv("HOME") + "/.config/stormpath/apiKey.properties")
 }

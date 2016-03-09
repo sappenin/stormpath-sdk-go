@@ -6,11 +6,11 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/sappenin/stormpath-sdk-go"
 	"google.golang.org/appengine/log"
-	"golang.org/x/net/context"
 	"fmt"
 	"net/url"
 	"google.golang.org/appengine"
 	"github.com/nu7hatch/gouuid"
+	"golang.org/x/net/context"
 	gorilla_context "github.com/gorilla/context"
 )
 
