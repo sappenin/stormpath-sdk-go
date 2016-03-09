@@ -10,73 +10,106 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"golang.org/x/net/context"
+	"fmt"
+	"google.golang.org/appengine"
 )
 
 //SAuthc1 algorithm constants
 const (
-	IDTerminator         = "sauthc1_request"
+	IDTerminator = "sauthc1_request"
 	AuthenticationScheme = "SAuthc1"
-	NL                   = "\n"
-	HostHeader           = "Host"
-	AuthorizationHeader  = "Authorization"
-	StormpathDateHeader  = "X-Stormpath-Date"
-	Algorithm            = "HMAC-SHA-256"
-	SAUTHC1Id            = "sauthc1Id"
+	NL = "\n"
+	HostHeader = "Host"
+	AuthorizationHeader = "Authorization"
+	StormpathDateHeader = "X-Stormpath-Date"
+	Algorithm = "HMAC-SHA-256"
+	SAUTHC1Id = "sauthc1Id"
 	SAUTHC1SignedHeaders = "sauthc1SignedHeaders"
-	SAUTHC1Signature     = "sauthc1Signature"
-	DateFormat           = "20060102"
-	TimestampFormat      = "20060102T150405Z0700"
+	SAUTHC1Signature = "sauthc1Signature"
+	DateFormat = "20060102"
+	TimestampFormat = "20060102T150405Z0700"
 )
 
 //Authenticate generates the proper authentication header for the SAuthc1 algorithm use by Stormpath
-func Authenticate(req *http.Request, payload []byte, date time.Time, credentials Credentials, nonce string) {
-	timestamp := date.Format(TimestampFormat)
-	dateStamp := date.Format(DateFormat)
-	req.Header.Set(HostHeader, req.URL.Host)
-	req.Header.Set(StormpathDateHeader, timestamp)
+func Authenticate(ctx context.Context, req *http.Request, payload []byte, date time.Time, credentials Credentials, nonce string) {
 
-	signedHeadersString := signedHeadersString(req.Header)
+	//fmt.Printf("%vPAYLOAD: %#v", NL, string(payload))
+
+	//fmt.Printf("%vStart AUTHENTICATE", NL)
+
+	timestamp := date.Format(TimestampFormat)
+	//fmt.Printf("%vAUTH(TIMESTAMP): %v", NL, timestamp)
+
+	dateStamp := date.Format(DateFormat)
+	//fmt.Printf("%vAUTH(DATESTAMP): %v", NL, dateStamp)
+
+	req.Header.Set(HostHeader, req.URL.Host)
+	//fmt.Printf("%vAUTH(HOSTHEADER): %v", NL, req.URL.Host)
+
+	req.Header.Set(StormpathDateHeader, timestamp)
+	//fmt.Printf("%vAUTH(STORMPATHDATEHEADER): %v", NL, timestamp)
+
+	signedHeadersString := signedHeadersStringWithoutUserAgent(req.Header)
+	//fmt.Printf("%vAUTH(SIGNEDHEADERSSTRING): %v", NL, signedHeadersString)
+
+	//fmt.Printf("%vAUTH(PATH): %v", NL, req.URL.Path)
+	//fmt.Printf("%vAUTH(QUERY): %v", NL, req.URL.Query())
 
 	canonicalRequest :=
-		req.Method +
-			NL +
-			canonicalizeresourcePath(req.URL.Path) +
-			NL +
-			canonicalizeQueryString(req.URL.Query()) +
-			NL +
-			canonicalizeHeadersString(req.Header) +
-			NL +
-			signedHeadersString +
-			NL +
-			hex.EncodeToString(hash(payload))
+	req.Method +
+	NL +
+	canonicalizeresourcePath(req.URL.Path) +
+	NL +
+	canonicalizeQueryString(req.URL.Query()) +
+	NL +
+	canonicalizeHeadersStringWithoutUserAgent(ctx, req.Header) +
+	NL +
+	signedHeadersString +
+	NL +
+	hex.EncodeToString(hash(payload))
+	//fmt.Printf("%vAUTH(CANONICALREQUEST): %v", NL, canonicalRequest)
 
 	id := credentials.ID + "/" + dateStamp + "/" + nonce + "/" + IDTerminator
+	//fmt.Printf("%vAUTH(ID): %v", NL, id)
 
 	canonicalRequestHashHex := hex.EncodeToString(hash([]byte(canonicalRequest)))
+	//fmt.Printf("%vAUTH(CANONICALREQUESTHASHHEX): %v", NL, canonicalRequestHashHex)
 
 	stringToSign :=
-		Algorithm +
-			NL +
-			timestamp +
-			NL +
-			id +
-			NL +
-			canonicalRequestHashHex
+	Algorithm +
+	NL +
+	timestamp +
+	NL +
+	id +
+	NL +
+	canonicalRequestHashHex
+	//fmt.Printf("%vAUTH(STRINGTOSIGN): %v", NL, stringToSign)
 
 	secret := []byte(AuthenticationScheme + credentials.Secret)
+	//fmt.Printf("%vAUTH(SECRET): %v", NL, secret)
+
 	singDate := sing(dateStamp, secret)
+	//fmt.Printf("%vAUTH(SINGDATE): %v", NL, singDate)
+
 	singNonce := sing(nonce, singDate)
+	//fmt.Printf("%vAUTH(SINGNONCE): %v", NL, singNonce)
+
 	signing := sing(IDTerminator, singNonce)
+	//fmt.Printf("%vAUTH(SIGNING): %v", NL, signing)
 
 	signature := sing(stringToSign, signing)
+	//fmt.Printf("%vAUTH(SIGNATURE): %v", NL, signature)
+
 	signatureHex := hex.EncodeToString(signature)
+	//fmt.Printf("%vAUTH(SIGNATUREHEX): %v", NL, signatureHex)
 
 	authorizationHeader :=
-		AuthenticationScheme + " " +
-			createNameValuePair(SAUTHC1Id, id) + ", " +
-			createNameValuePair(SAUTHC1SignedHeaders, signedHeadersString) + ", " +
-			createNameValuePair(SAUTHC1Signature, signatureHex)
-
+	AuthenticationScheme + " " +
+	createNameValuePair(SAUTHC1Id, id) + ", " +
+	createNameValuePair(SAUTHC1SignedHeaders, signedHeadersString) + ", " +
+	createNameValuePair(SAUTHC1Signature, signatureHex)
+	//log.Printf("FOO: AuthorizationHeader: %v", authorizationHeader)
 	req.Header.Set(AuthorizationHeader, authorizationHeader)
 }
 
@@ -122,7 +155,6 @@ func canonicalizeQueryString(queryValues url.Values) string {
 			stringBuffer.WriteString(key + "=" + value)
 		}
 	}
-
 	return stringBuffer.String()
 }
 
@@ -133,10 +165,11 @@ func canonicalizeresourcePath(path string) string {
 	return encodeURL(path, true, true)
 }
 
-func canonicalizeHeadersString(headers http.Header) string {
+func canonicalizeHeadersString(ctx context.Context, headers http.Header) string {
 	stringBuffer := bytes.NewBufferString("")
 
 	keys := sortedMapKeys(headers)
+	//log.Printf("KEYS: %#v", keys)
 
 	for _, k := range keys {
 		stringBuffer.WriteString(strings.ToLower(k))
@@ -148,25 +181,95 @@ func canonicalizeHeadersString(headers http.Header) string {
 			if !first {
 				stringBuffer.WriteString(",")
 			}
+
+			// For URL Fetch, append the Google User Agent.
+			if strings.ToLower(k) == strings.ToLower("User-Agent") {
+
+				appName := appengine.AppID(ctx)
+				//var devText string
+				//if appengine.IsDevAppServer() {
+				devText := "dev~"
+				//}
+
+				v = v + fmt.Sprintf(" AppEngine-Google; (+http://code.google.com/appengine; appid: %v%v)", devText, appName)
+				//fmt.Printf("%vNew User-Agent: %v", NL, v)
+			}
+
 			stringBuffer.WriteString(v)
 			first = false
 		}
 		stringBuffer.WriteString(NL)
 	}
 
+	//log.Printf("HEADERS: %v", stringBuffer.String())
 	return stringBuffer.String()
 }
 
-func signedHeadersString(headers http.Header) string {
+func canonicalizeHeadersStringWithoutUserAgent(ctx context.Context, headers http.Header) string {
+	stringBuffer := bytes.NewBufferString("")
+
+	keys := sortedMapKeys(headers)
+	//log.Printf("KEYS: %#v", keys)
+
+	for _, k := range keys {
+		if strings.ToLower(k) != strings.ToLower("User-Agent") {
+			stringBuffer.WriteString(strings.ToLower(k))
+			stringBuffer.WriteString(":")
+
+			first := true
+
+			for _, v := range headers[k] {
+
+				//if k == strings.ToLower("Content-Type") && v == "" {
+				// Skip an empty content-type.
+				//}else {
+				if !first {
+					stringBuffer.WriteString(",")
+				}
+
+				stringBuffer.WriteString(v)
+				first = false
+				//}
+			}
+			stringBuffer.WriteString(NL)
+		}
+	}
+
+	//fmt.Printf("HEADERS without UA: %v", stringBuffer.String())
+	return stringBuffer.String()
+}
+
+//func isContentTypeEmpty(headers http.Header) bool {
+//	keys := sortedMapKeys(headers)
+//	for _, k := range keys {
+//		if strings.ToLower(k) == strings.ToLower("Content-Type") {
+//			for _, v := range headers[k] {
+//				if v != "" {
+//					// If we get here, it means there's at least one non-empty Content-Type header.
+//					return false
+//				}
+//			}
+//		}
+//	}
+//	return true
+//}
+
+func signedHeadersStringWithoutUserAgent(headers http.Header) string {
 	stringBuffer := bytes.NewBufferString("")
 
 	keys := sortedMapKeys(headers)
 
 	for _, k := range keys {
-		if stringBuffer.Len() > 0 {
-			stringBuffer.WriteString(";")
+		if strings.ToLower(k) != strings.ToLower("User-Agent") {
+			//if skipContentType && strings.ToLower(k) == strings.ToLower("Content-Type") {
+			// Skip an empty content-type.
+			//	} else {
+			if stringBuffer.Len() > 0 {
+				stringBuffer.WriteString(";")
+			}
+			stringBuffer.WriteString(strings.ToLower(k))
+			//	}
 		}
-		stringBuffer.WriteString(strings.ToLower(k))
 	}
 
 	return stringBuffer.String()

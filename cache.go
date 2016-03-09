@@ -2,8 +2,6 @@ package stormpath
 
 import (
 	"encoding/json"
-	"fmt"
-	"errors"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -32,21 +30,21 @@ type Cache interface {
 // Wrapper for
 
 //////////////////////
-// Custom Implmentation of Cache that works with AppEngine
+// Cache implementation that works with go-cache (github.com/patrickmn/go-cache)
 //////////////////////
 
 // A wrapper for a cache.Cache that provides Cachable methods to work with the StormPath client.
-type CacheableCacheWrapper struct {
+type CacheableCache struct {
 	// The wrapped cache.Cache
 	Cache *cache.Cache
 }
 
-func (cc *CacheableCacheWrapper) Exists(key string) bool {
+func (cc *CacheableCache) Exists(key string) bool {
 	_, exists := cc.Cache.Get(key);
 	return exists
 }
 
-func (cc *CacheableCacheWrapper) Set(key string, data interface{}) {
+func (cc *CacheableCache) Set(key string, data interface{}) {
 	if valueAsJson, err := json.Marshal(data); err != nil {
 		panic(err)
 	} else {
@@ -55,18 +53,15 @@ func (cc *CacheableCacheWrapper) Set(key string, data interface{}) {
 	}
 }
 
-func (cc *CacheableCacheWrapper) Get(key string, result interface{}) error {
+func (cc *CacheableCache) Get(key string, result interface{}) error {
 	_result, exists := cc.Cache.Get(key);
-	if exists {
-		//log.Printf("Value found for Key %v!", key)
-		json.Unmarshal([]byte(_result.(string)), result)
-		//log.Printf("AFTER UNMARSHAL: %#v", result)
+	if !exists {
 		return nil
 	} else {
-		return errors.New(fmt.Sprintf("No entry found for Key '%v'", key));
+		return json.Unmarshal([]byte(_result.(string)), result)
 	}
 }
 
-func (cc *CacheableCacheWrapper) Del(key string) {
+func (cc *CacheableCache) Del(key string) {
 	cc.Cache.Delete(key)
 }

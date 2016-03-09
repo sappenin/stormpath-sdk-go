@@ -12,8 +12,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/gorilla/sessions"
-	"github.com/patrickmn/go-cache"
-	"time"
 )
 
 var indexHTML = `
@@ -52,12 +50,9 @@ const sessionName = "go-sdk-demo"
 
 var store = sessions.NewCookieStore([]byte("go-sdk-demo"))
 
-// Create a cache with a default expiration time of 5 minutes, and which purges expired items every 30 seconds
-var c *cache.Cache = cache.New(5 * time.Minute, 30 * time.Second)
-
 func main() {
 	credentials, _ := stormpath.NewDefaultCredentials()
-	stormpath.Init(credentials, &stormpath.CacheableCacheWrapper{Cache: c})
+	stormpath.Init(credentials, nil)
 
 	n := negroni.Classic()
 

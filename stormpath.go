@@ -2,65 +2,70 @@ package stormpath
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"runtime"
 	"strings"
 	"time"
 
 	uuid "github.com/nu7hatch/gouuid"
+	"github.com/patrickmn/go-cache"
+	"golang.org/x/net/context"
+	"log"
+	"errors"
+	"google.golang.org/appengine/urlfetch"
+	"runtime"
+	ae "google.golang.org/appengine/log"
 )
 
-//BaseURL defines the Stormpath API base URL
 var BaseURL = "https://api.stormpath.com/v1/"
 
 //Version is the current SDK Version
 const version = "0.1.0-beta.12"
 
 const (
-	Enabled                   = "ENABLED"
-	Disabled                  = "DISABLED"
-	ApplicationJson           = "application/json"
+	Enabled = "ENABLED"
+	Disabled = "DISABLED"
+	ApplicationJson = "application/json"
 	ApplicationFormURLencoded = "application/x-www-form-urlencoded"
 )
 
-var client *Client
+var _credentials Credentials
+var _cache       *CacheableCache
 
-//Client is low level REST client for any Stormpath request,
+//ClientProperties is low level REST client for any Stormpath request,
 //it holds the credentials, an the actual http client, and the cache.
 //The Cache can be initialize in nil and the client would simply ignore it
 //and don't cache any response.
 type Client struct {
 	Credentials Credentials
-	HTTPClient  *http.Client
-	Cache       Cache
+	Cache       *CacheableCache
+	ctx         context.Context
+	httpClient  *http.Client
 }
 
-//Init initializes the underlying client that communicates with Stormpath
-func Init(credentials Credentials, cache Cache) {
-	tr := &http.Transport{
-		TLSClientConfig:    &tls.Config{},
-		DisableCompression: true,
+// Init initializes the underlying client that communicates with Stormpath.
+// This cache will be shared by all requests, but this is ok for the purposes of this SDK because all requests
+// will be operating upon the same StormPath account, even across multiple calling threads.
+func Init(credentials Credentials, cache *cache.Cache) {
+	_credentials = credentials
+	if cache != nil {
+		_cache = &CacheableCache{Cache: cache}
 	}
-	httpClient := &http.Client{Transport: tr}
-	httpClient.CheckRedirect = checkRedirect
-
-	client = &Client{credentials, httpClient, cache}
-
-	initLog()
 }
 
-//InitWithCustomHTTPClient initializes the underlying client that communicates with Stormpath with a custom http.Client
-func InitWithCustomHTTPClient(credentials Credentials, cache Cache, httpClient *http.Client) {
-	httpClient.CheckRedirect = checkRedirect
-	client = &Client{credentials, httpClient, cache}
+func getClient(ctx context.Context) *Client {
+	trans := urlfetch.Transport{Context:ctx, AllowInvalidServerCertificate:false}
+	httpClient := &http.Client{Transport: &trans}
+	client := &Client{Credentials: _credentials, Cache: _cache, ctx: ctx, httpClient: httpClient}
+	httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return checkRedirect(client, req, via)
+	}
 
-	initLog()
+	log.Printf("Credentials: %#v", _credentials)
+	return client
 }
 
 func (client *Client) postURLEncodedForm(urlStr string, body string, result interface{}) error {
@@ -88,7 +93,7 @@ func buildRelativeURL(parts ...string) string {
 
 	for i, part := range parts {
 		buffer.WriteString(part)
-		if !strings.HasSuffix(part, "/") && i+1 < len(parts) {
+		if !strings.HasSuffix(part, "/") && i + 1 < len(parts) {
 			buffer.WriteString("/")
 		}
 	}
@@ -101,7 +106,7 @@ func buildAbsoluteURL(parts ...string) string {
 
 	for i, part := range parts {
 		buffer.WriteString(part)
-		if !strings.HasSuffix(part, "/") && i+1 < len(parts) {
+		if !strings.HasSuffix(part, "/") && i + 1 < len(parts) {
 			buffer.WriteString("/")
 		}
 	}
@@ -110,22 +115,32 @@ func buildAbsoluteURL(parts ...string) string {
 }
 
 func (client *Client) newRequest(method string, urlStr string, body interface{}, contentType string) *http.Request {
+	fmt.Sprintln("Building new request for: %v", urlStr)
+
 	var encodedBody []byte
-	if contentType == ApplicationJson {
+	if strings.ToLower(method) == strings.ToLower("GET") || strings.ToLower(method) == strings.ToLower("DELETE") {
+		encodedBody = body.([]byte)
+	} else if contentType == ApplicationJson {
 		encodedBody, _ = json.Marshal(body)
 	} else {
-		//If content type is not application/json then it is application/x-www-form-urlencoded in which case the body should the encoded params as a []byte
+		//If content type is not application/json then it is application/x-www-form-urlencoded in which case the body should be the encoded params as a []byte
 		encodedBody = body.([]byte)
 	}
+	fmt.Printf("%vENCODED_BODY: %v", NL, encodedBody)
+	fmt.Printf("%vCONTENT_TYPE=%v", NL, contentType)
+
 	req, _ := http.NewRequest(method, urlStr, bytes.NewReader(encodedBody))
 	req.Header.Set("User-Agent", fmt.Sprintf("sappenin/stormpath-sdk-go/%s (%s; %s)", version, runtime.GOOS, runtime.GOARCH))
+	//req.Header.Set("User-Agent", fmt.Sprintf("sappenin-sp-client"))
 	req.Header.Set("Accept", ApplicationJson)
 	req.Header.Set("Content-Type", contentType)
 
 	uuid, _ := uuid.NewV4()
 	nonce := uuid.String()
 
-	Authenticate(req, encodedBody, time.Now().In(time.UTC), client.Credentials, nonce)
+	Authenticate(client.ctx, req, encodedBody, time.Now().In(time.UTC), client.Credentials, nonce)
+
+	fmt.Sprintln("Returning Request: %#v", req)
 	return req
 }
 
@@ -218,39 +233,17 @@ func (client *Client) do(request *http.Request) error {
 
 //execRequest executes a request, it would return a byte slice with the raw resoponse data and an error if any occurred
 func (client *Client) execRequest(req *http.Request) (*http.Response, error) {
-	if logLevel == "DEBUG" {
-		//Print request
-		dump, _ := httputil.DumpRequest(req, true)
-		Logger.Printf("[DEBUG] Stormpath request\n%s", dump)
-	}
-	resp, err := client.HTTPClient.Do(req)
-	if logLevel == "DEBUG" {
-		//Print response
-		dump, _ := httputil.DumpResponse(resp, true)
-		Logger.Printf("[DEBUG] Stormpath response\n%s", dump)
-	}
-	return resp, handleResponseError(resp, err)
-}
 
-func checkRedirect(req *http.Request, via []*http.Request) error {
-	//Go client defautl behavior is to bail after 10 redirects
-	if len(via) > 10 {
-		return errors.New("stopped after 10 redirects")
-	}
-	//No redirect do nothing
-	if len(via) == 0 {
-		// No redirects
-		return nil
-	}
-	// Re-Authenticate the redirect request
-	uuid, _ := uuid.NewV4()
-	nonce := uuid.String()
+	var dump []byte
+	dump, _ = httputil.DumpRequest(req, true)
+	ae.Debugf(client.ctx, "Stormpath request\n%s", dump)
 
-	//We can use an empty payload cause the only redirect is for the current tenant
-	//this could change in the future
-	Authenticate(req, emptyPayload(), time.Now().In(time.UTC), client.Credentials, nonce)
+	resp, err := client.httpClient.Do(req)
 
-	return nil
+	dump, _ = httputil.DumpResponse(resp, true)
+	ae.Debugf(client.ctx, "Stormpath response\n%s", dump)
+
+	return resp, client.handleResponseError(resp, err)
 }
 
 func cleanCustomData(customData map[string]interface{}) map[string]interface{} {
@@ -266,4 +259,25 @@ func cleanCustomData(customData map[string]interface{}) map[string]interface{} {
 	}
 
 	return customData
+}
+
+func checkRedirect(client *Client, req *http.Request, via []*http.Request) error {
+	//Go client default behavior is to bail after 10 redirects
+	if len(via) > 10 {
+		return errors.New("stopped after 10 redirects")
+	}
+	//No redirect do nothing
+	if len(via) == 0 {
+		// No redirects
+		return nil
+	}
+	// Re-Authenticate the redirect request
+	uuid, _ := uuid.NewV4()
+	nonce := uuid.String()
+
+	//We can use an empty payload cause the only redirect is for the current tenant
+	//this could change in the future
+	Authenticate(client.ctx, req, emptyPayload(), time.Now().In(time.UTC), client.Credentials, nonce)
+
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	ae "google.golang.org/appengine/log"
 )
 
 //Error maps a Stormpath API JSON error object which implements Go error interface
@@ -23,10 +24,10 @@ func (e Error) String() string {
 	return fmt.Sprintf("Stormpath request error \nCode: [ %d ]\nMessage: [ %s ]\nDeveloper Message: [ %s ]\nMore info [ %s ]", e.Code, e.Message, e.DeveloperMessage, e.MoreInfo)
 }
 
-func handleResponseError(resp *http.Response, err error) error {
+func (client *Client) handleResponseError(resp *http.Response, err error) error {
 	//Error from the request execution
 	if err != nil {
-		Logger.Printf("[ERROR] %s [%s]", err, resp.Request.URL.String())
+		ae.Errorf(client.ctx, "%s [%s]", err, resp.Request.URL.String())
 		return err
 	}
 	//Check for Stormpath specific errors
@@ -38,7 +39,7 @@ func handleResponseError(resp *http.Response, err error) error {
 			return err
 		}
 
-		Logger.Printf("[ERROR] %s", spError)
+		ae.Errorf(client.ctx, "%s", spError)
 		return *spError
 	}
 	//No errors from the request execution
