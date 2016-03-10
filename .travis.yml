@@ -20,7 +20,7 @@ before_script:
   - wget https://storage.googleapis.com/appengine-sdks/featured/go_appengine_sdk_linux_amd64-1.9.34.zip -nv
   - unzip -q go_appengine_sdk_linux_amd64-1.9.34.zip
   - rm -rf ./go_appengine/demos
-  - export PATH=$PATH:google
+  - export PATH=$PATH:go_appengine
 script:
 - ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race
 after_success:
