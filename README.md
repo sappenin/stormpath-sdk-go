@@ -18,11 +18,13 @@ with Google App Engine.  For example:
 
 Develop:
 
-[![Build Status](https://travis-ci.org/sappenin/stormpath-sdk-go.svg?branch=develop)](https://travis-ci.org/sappenin/stormpath-sdk-go) [![codecov.io](http://codecov.io/github/sappenin/stormpath-sdk-go/coverage.svg?branch=develop)](http://codecov.io/github/sappenin/stormpath-sdk-go?branch=develop)
+[![Build Status](https://travis-ci.org/sappenin/stormpath-sdk-go.svg?branch=develop)](https://travis-ci.org/sappenin/stormpath-sdk-go) 
+[![Coverage Status](https://coveralls.io/repos/sappenin/stormpath-sdk-go/badge.svg?branch=develop)](https://coveralls.io/r/sappenin/stormpath-sdk-go?branch=develop)
 
 Master:
 
-[![Build Status](https://travis-ci.org/sappenin/stormpath-sdk-go.svg?branch=master)](https://travis-ci.org/sappenin/stormpath-sdk-go) [![codecov.io](http://codecov.io/github/sappenin/stormpath-sdk-go/coverage.svg?branch=master)](http://codecov.io/github/sappenin/stormpath-sdk-go?branch=master)
+[![Build Status](https://travis-ci.org/sappenin/stormpath-sdk-go.svg?branch=master)](https://travis-ci.org/sappenin/stormpath-sdk-go) 
+[![Coverage Status](https://coveralls.io/repos/sappenin/stormpath-sdk-go/badge.svg?branch=master)](https://coveralls.io/r/sappenin/stormpath-sdk-go?branch=master)
 
 # Usage
 
