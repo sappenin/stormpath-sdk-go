@@ -76,7 +76,7 @@ func addAccountToGroup(ctx context.Context, account *Account) *Group {
 var _ = BeforeSuite(func() {
 
 	if ctx_err != nil {
-		//panic(ctx_err)
+		panic(ctx_err)
 	}
 
 	var err error
