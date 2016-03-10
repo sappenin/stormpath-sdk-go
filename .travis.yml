@@ -15,7 +15,7 @@ install:
 - if ! go get github.com/golang/tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
 - go get
 script:
-ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race
+- ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race
 after_success:
 - goveralls -service=travis-ci -coverprofile=example.coverprofile -repotoken $COVERALLS_TOKEN
 #- mv stormpath-sdk-go.coverprofile coverage.txt && bash <(curl -s https://codecov.io/bash)
