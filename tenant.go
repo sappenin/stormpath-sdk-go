@@ -18,8 +18,10 @@ type Tenant struct {
 func CurrentTenant(ctx context.Context) (*Tenant, error) {
 	tenant := &Tenant{}
 
-	err := getClient(ctx).doWithResult(
-		getClient(ctx).newRequest(
+	client := getClient(ctx)
+
+	err := client.doWithResult(
+		client.newRequest(
 			"GET",
 			buildRelativeURL("tenants", "current"),
 			emptyPayload(),
