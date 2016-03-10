@@ -24,5 +24,5 @@ before_script:
 script:
 - ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race
 after_success:
-- goveralls -service=travis-ci -coverprofile=example.coverprofile -repotoken $COVERALLS_TOKEN
+- goveralls -service=travis-ci -coverprofile=stormpath-sdk-go.coverprofile -repotoken $COVERALLS_TOKEN
 #- mv stormpath-sdk-go.coverprofile coverage.txt && bash <(curl -s https://codecov.io/bash)
