@@ -51,9 +51,9 @@ func TestKnownSAuthc1ForUrlFetch_StormPath(t *testing.T) {
 	var nonce = "03d9cf9c-352e-4bf5-5308-40c98fc54958"
 	stormpath.Authenticate(ctx, req, []byte{}, now.In(time.UTC), cred, nonce)
 
-	expected := strings.Join([]string{"SAuthc1 sauthc1Id=2SF81PCVA776S8QA9SZ7PCREX/20160308/",
+	expected := strings.Join([]string{"SAuthc1 sauthc1Id=2PXPDIBC8NPB500J73ZNGJEVB/20160308/",
 		nonce,
-		"/sauthc1_request, sauthc1SignedHeaders=accept;content-type;host;x-stormpath-date, sauthc1Signature=3bb749a5cbcd6e4a465d7933986e8397317b503767e6a35aba631dfe1ae29a17"}, "")
+		"/sauthc1_request, sauthc1SignedHeaders=accept;content-type;host;x-stormpath-date, sauthc1Signature=7ff61dc6d245071fc1be636f2cd973fdfb91e82a8dd638c523e8fca391cd17fa"}, "")
 	actual := req.Header.Get("Authorization")
 	assert.Equal(t, expected, actual)
 }
@@ -86,9 +86,9 @@ func TestKnownSAuthc1ForUrlFetch_RequestBin(t *testing.T) {
 	var nonce = "8fd1415e-6e0b-45b9-7513-7fd6e9887795"
 	stormpath.Authenticate(ctx, req, []byte{}, now.In(time.UTC), cred, nonce)
 
-	expected := strings.Join([]string{"SAuthc1 sauthc1Id=2SF81PCVA776S8QA9SZ7PCREX/20160308/",
+	expected := strings.Join([]string{"SAuthc1 sauthc1Id=2PXPDIBC8NPB500J73ZNGJEVB/20160308/",
 		nonce,
-		"/sauthc1_request, sauthc1SignedHeaders=accept;content-type;host;x-stormpath-date, sauthc1Signature=ddf6b594851f069d54962f5c5720cfc6c69b11ab3c2f955f16554ed2b2ab0a84"}, "")
+		"/sauthc1_request, sauthc1SignedHeaders=accept;content-type;host;x-stormpath-date, sauthc1Signature=3c6e15b0d7d3ce68f337952f5306d9ea5c69a576ea6c062f44918afdb8888a6d"}, "")
 	actual := req.Header.Get("Authorization")
 	assert.Equal(t, expected, actual)
 }
@@ -119,9 +119,9 @@ func TestKnownSAuthc1ForUrlFetch_StormPathAccounts_GET(t *testing.T) {
 	var nonce = "3abf1257-2b65-41bf-6773-9b5f607850bc"
 	stormpath.Authenticate(ctx, req, []byte{}, now.In(time.UTC), cred, nonce)
 
-	expected := strings.Join([]string{"SAuthc1 sauthc1Id=2SF81PCVA776S8QA9SZ7PCREX/20160309/",
+	expected := strings.Join([]string{"SAuthc1 sauthc1Id=2PXPDIBC8NPB500J73ZNGJEVB/20160309/",
 		nonce,
-		"/sauthc1_request, sauthc1SignedHeaders=accept;content-type;host;x-stormpath-date, sauthc1Signature=8944a27a4b0fae2d1af5bd4ddc90ae493551f19b8f89d119ac46c0387b3665d6"}, "")
+		"/sauthc1_request, sauthc1SignedHeaders=accept;content-type;host;x-stormpath-date, sauthc1Signature=85d60a8fa70553f021100206d7cc927632be7d265edaad8c99760d4f4db7661f"}, "")
 	actual := req.Header.Get("Authorization")
 	assert.Equal(t, expected, actual)
 }
@@ -152,9 +152,9 @@ func TestKnownSAuthc1ForUrlFetch_Delete(t *testing.T) {
 	var nonce = "459c56d5-a391-49d2-7fc3-a48e7b4b5539"
 	stormpath.Authenticate(ctx, req, []byte{}, now.In(time.UTC), cred, nonce)
 
-	expected := strings.Join([]string{"SAuthc1 sauthc1Id=2SF81PCVA776S8QA9SZ7PCREX/20160309/",
+	expected := strings.Join([]string{"SAuthc1 sauthc1Id=2PXPDIBC8NPB500J73ZNGJEVB/20160309/",
 		nonce,
-		"/sauthc1_request, sauthc1SignedHeaders=accept;content-type;host;x-stormpath-date, sauthc1Signature=47bb11e2e92fb0cae81368c4127a10f53e13755bf4c1a2413191de1b45d835c1"}, "")
+		"/sauthc1_request, sauthc1SignedHeaders=accept;content-type;host;x-stormpath-date, sauthc1Signature=808d09dbaf549486f4f27ec1e4f4100c43f4d53ac777b2f86ed1ddf2dbd67bcf"}, "")
 	actual := req.Header.Get("Authorization")
 	assert.Equal(t, expected, actual)
 }
