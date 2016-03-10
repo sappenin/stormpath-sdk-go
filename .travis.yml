@@ -17,9 +17,12 @@ install:
 - go get
 
 before_script:
+  - mkdir -p google
   - wget https://storage.googleapis.com/appengine-sdks/featured/go_appengine_sdk_linux_amd64-1.9.34.zip -nv
   - unzip -q go_appengine_sdk_linux_amd64-1.9.34.zip
-  - export PATH=$PATH:go_appengine
+  - cp ./go_appengine/dev_appserver.py ./google
+  - rm -rf ./go_appengine
+  - export PATH=$PATH:google
 script:
 - ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race
 after_success:
